@@ -1,4 +1,4 @@
-package com.oujiangping.media;
+package com.oujiangping.media.ffmpeg;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +27,6 @@ import org.bytedeco.javacpp.PointerPointer;
 import org.bytedeco.javacpp.ShortPointer;
 
 import org.bytedeco.ffmpeg.avcodec.*;
-import org.bytedeco.ffmpeg.avdevice.*;
 import org.bytedeco.ffmpeg.avformat.*;
 import org.bytedeco.ffmpeg.avutil.*;
 import org.bytedeco.ffmpeg.swresample.*;
@@ -47,7 +46,7 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
 /**
  * @author Samuel Audet
  */
-public class MyFFmpegFrameRecorder extends FrameRecorder {
+public class CommonFFmpegFrameRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
 
     public static class Exception extends FrameRecorder.Exception {
@@ -60,12 +59,12 @@ public class MyFFmpegFrameRecorder extends FrameRecorder {
         }
     }
 
-    public static MyFFmpegFrameRecorder createDefault(File f, int w, int h) throws Exception {
-        return new MyFFmpegFrameRecorder(f, w, h);
+    public static CommonFFmpegFrameRecorder createDefault(File f, int w, int h) throws Exception {
+        return new CommonFFmpegFrameRecorder(f, w, h);
     }
 
-    public static MyFFmpegFrameRecorder createDefault(String f, int w, int h) throws Exception {
-        return new MyFFmpegFrameRecorder(f, w, h);
+    public static CommonFFmpegFrameRecorder createDefault(String f, int w, int h) throws Exception {
+        return new CommonFFmpegFrameRecorder(f, w, h);
     }
 
     private static Exception loadingException = null;
@@ -93,7 +92,7 @@ public class MyFFmpegFrameRecorder extends FrameRecorder {
                 if (t instanceof Exception) {
                     throw loadingException = (Exception) t;
                 } else {
-                    throw loadingException = new Exception("Failed to load " + MyFFmpegFrameRecorder.class, t);
+                    throw loadingException = new Exception("Failed to load " + CommonFFmpegFrameRecorder.class, t);
                 }
             }
         }
@@ -107,27 +106,27 @@ public class MyFFmpegFrameRecorder extends FrameRecorder {
         }
     }
 
-    public MyFFmpegFrameRecorder(File file, int audioChannels) {
+    public CommonFFmpegFrameRecorder(File file, int audioChannels) {
         this(file, 0, 0, audioChannels);
     }
 
-    public MyFFmpegFrameRecorder(String filename, int audioChannels) {
+    public CommonFFmpegFrameRecorder(String filename, int audioChannels) {
         this(filename, 0, 0, audioChannels);
     }
 
-    public MyFFmpegFrameRecorder(File file, int imageWidth, int imageHeight) {
+    public CommonFFmpegFrameRecorder(File file, int imageWidth, int imageHeight) {
         this(file, imageWidth, imageHeight, 0);
     }
 
-    public MyFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight) {
+    public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight) {
         this(filename, imageWidth, imageHeight, 0);
     }
 
-    public MyFFmpegFrameRecorder(File file, int imageWidth, int imageHeight, int audioChannels) {
+    public CommonFFmpegFrameRecorder(File file, int imageWidth, int imageHeight, int audioChannels) {
         this(file.getAbsolutePath(), imageWidth, imageHeight, audioChannels);
     }
 
-    public MyFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight, int audioChannels) {
+    public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight, int audioChannels) {
         this.filename = filename;
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
@@ -146,19 +145,19 @@ public class MyFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public MyFFmpegFrameRecorder(OutputStream outputStream, int audioChannels) {
+    public CommonFFmpegFrameRecorder(OutputStream outputStream, int audioChannels) {
         this(outputStream.toString(), audioChannels);
         this.outputStream = outputStream;
         this.closeOutputStream = true;
     }
 
-    public MyFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight) {
+    public CommonFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight) {
         this(outputStream.toString(), imageWidth, imageHeight);
         this.outputStream = outputStream;
         this.closeOutputStream = true;
     }
 
-    public MyFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight, int audioChannels) {
+    public CommonFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight, int audioChannels) {
         this(outputStream.toString(), imageWidth, imageHeight, audioChannels);
         this.outputStream = outputStream;
         this.closeOutputStream = true;
@@ -494,7 +493,7 @@ public class MyFFmpegFrameRecorder extends FrameRecorder {
                 } else if ("3gp".equals(format_name)) {
                     oformat.video_codec(AV_CODEC_ID_H263);
                 } else if ("avi".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_HUFFYUV);
+                    oformat.video_codec(AV_CODEC_ID_H264);
                 }
 
                 /* find the video encoder */

@@ -1,6 +1,6 @@
 import com.oujiangping.media.MediaApplication;
-import com.oujiangping.media.Player;
-import com.oujiangping.media.PlayerChannelCallBack;
+import com.oujiangping.media.ffmpeg.Player;
+import com.oujiangping.media.ffmpeg.PlayerChannelCallBack;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;

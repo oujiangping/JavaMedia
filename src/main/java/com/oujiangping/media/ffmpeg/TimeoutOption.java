@@ -1,4 +1,4 @@
-package com.oujiangping.media;
+package com.oujiangping.media.ffmpeg;
 
 /**
  * 功能描述：<>

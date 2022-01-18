@@ -1,4 +1,4 @@
-package com.oujiangping.media;
+package com.oujiangping.media.ffmpeg;
 
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;

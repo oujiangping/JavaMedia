@@ -1,5 +1,5 @@
 import com.oujiangping.media.MediaApplication;
-import com.oujiangping.media.MyFFmpegFrameRecorder;
+import com.oujiangping.media.ffmpeg.CommonFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.*;
@@ -33,12 +33,12 @@ public class RecorderTest {
         String inputFile = "https://devstreaming-cdn.apple.com/videos/wwdc/2019/502gzyuhh8p2r8g8/502/0960/0960.m3u8";
 
         // Decodes-encodes
-        String outputFile = "C:\\Users\\oujiangping\\Downloads\\test1.ts";
-        frameRecord(inputFile, outputFile);
+        String outputFile = "C:\\Users\\oujiangping\\Downloads\\test1.m3u8";
+        //frameRecord(inputFile, outputFile);
 
         // copies codec (no need to re-encode)
         //outputFile = "C:\\Users\\oujiangping\\Downloads\\202111181951.avi";
-        //packetRecord(inputFile, outputFile);
+        packetRecord(inputFile, outputFile);
 
     }
 
@@ -47,9 +47,9 @@ public class RecorderTest {
         int audioChannel = AUDIO_ENABLED ? 1 : 0;
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        MyFFmpegFrameRecorder recorder = new MyFFmpegFrameRecorder(outputFile, 1280, 720, audioChannel);
-
         grabber.start();
+
+        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
         recorder.start();
 
         Frame frame;
@@ -69,7 +69,7 @@ public class RecorderTest {
         int audioChannel = AUDIO_ENABLED ? 1 : 0;
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, audioChannel);
+        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, 1280, 720, audioChannel);
 
         grabber.start();
         recorder.start(grabber.getFormatContext());
