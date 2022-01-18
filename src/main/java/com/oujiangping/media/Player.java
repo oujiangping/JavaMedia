@@ -28,7 +28,7 @@ public class Player {
         grabber.setOption(
                 TimeoutOption.STIMEOUT.getKey(),
                 String.valueOf(timeout * 1000000)
-        ); // In microseconds.
+        );
         playerContext.setGrabber(grabber);
         playerContext.setSourceUrl(url);
         playerContext.setCallBack(callBack);
