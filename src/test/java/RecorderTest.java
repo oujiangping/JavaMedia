@@ -1,14 +1,15 @@
 import com.oujiangping.media.MediaApplication;
+import com.oujiangping.media.MyFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.*;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * 功能描述：<>
@@ -24,19 +25,20 @@ public class RecorderTest {
 
     private static final int RECORD_LENGTH = 5000;
 
-    private static final boolean AUDIO_ENABLED = false;
+    private static final boolean AUDIO_ENABLED = true;
 
-    public static void main(String[] args) throws FrameRecorder.Exception, FrameGrabber.Exception {
+    @Test
+    public void  record() throws FrameGrabber.Exception, FrameRecorder.Exception {
 
-        String inputFile = "C:\\Users\\oujiangping\\Downloads\\test.mp4";
+        String inputFile = "https://devstreaming-cdn.apple.com/videos/wwdc/2019/502gzyuhh8p2r8g8/502/0960/0960.m3u8";
 
         // Decodes-encodes
-        String outputFile = "C:\\Users\\oujiangping\\Downloads\\test1.avi";
+        String outputFile = "C:\\Users\\oujiangping\\Downloads\\test1.ts";
         frameRecord(inputFile, outputFile);
 
         // copies codec (no need to re-encode)
-//        outputFile = "C:\\Users\\oujiangping\\Downloads\\202111181951.avi";
-//        packetRecord(inputFile, outputFile);
+        //outputFile = "C:\\Users\\oujiangping\\Downloads\\202111181951.avi";
+        //packetRecord(inputFile, outputFile);
 
     }
 
@@ -45,7 +47,7 @@ public class RecorderTest {
         int audioChannel = AUDIO_ENABLED ? 1 : 0;
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, 1280, 720, audioChannel);
+        MyFFmpegFrameRecorder recorder = new MyFFmpegFrameRecorder(outputFile, 1280, 720, audioChannel);
 
         grabber.start();
         recorder.start();
@@ -67,7 +69,7 @@ public class RecorderTest {
         int audioChannel = AUDIO_ENABLED ? 1 : 0;
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, 1280, 720, audioChannel);
+        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, audioChannel);
 
         grabber.start();
         recorder.start(grabber.getFormatContext());
