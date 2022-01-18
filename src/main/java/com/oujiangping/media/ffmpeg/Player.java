@@ -17,6 +17,8 @@ public class Player {
      */
     private PlayerContext playerContext;
 
+
+
     /**
      * 默认超时时间
      */
@@ -41,9 +43,11 @@ public class Player {
     public void start() throws FFmpegFrameGrabber.Exception {
         playerContext.getGrabber().start();
         playerContext.getCallBack().onStart();
+    }
+
+    public void play() throws FFmpegFrameGrabber.Exception {
         AVPacket avPacket = null;
         while((avPacket = playerContext.getGrabber().grabPacket()) != null) {
-            System.out.println("frame grabbed at " + playerContext.getGrabber().getTimestamp());
             playerContext.getCallBack().onPacket(avPacket);
         }
         playerContext.getGrabber().stop();
@@ -53,5 +57,9 @@ public class Player {
     public void stop() throws FFmpegFrameGrabber.Exception {
         playerContext.getGrabber().stop();
         playerContext.getCallBack().onStop();
+    }
+
+    public PlayerContext getPlayerContext() {
+        return playerContext;
     }
 }

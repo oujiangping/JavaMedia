@@ -27,4 +27,13 @@ public interface MediaAgentInterface {
      * @date: 2022/1/18 14:54
      */
     void stop() throws FFmpegFrameGrabber.Exception, CommonFFmpegFrameRecorder.Exception;
+
+    /**
+     * 开始播放
+     * @param: []
+     * @return: void
+     * @author: oujiangping
+     * @date: 2022/1/18 16:40
+     */
+    void play() throws FFmpegFrameGrabber.Exception, CommonFFmpegFrameRecorder.Exception;
 }

@@ -15,13 +15,13 @@ public class Recorder {
      */
     private RecorderContext recorderContext;
 
-    public Recorder(RecorderContext recorderContext, RecorderChannelCallBack callBack) {
+    public Recorder(RecorderContext recorderContext) {
         this.recorderContext = recorderContext;
-        recorderContext.setRecorderChannelCallBack(callBack);
     }
 
     public void start() throws FrameRecorder.Exception {
         this.recorderContext.getRecorder().start();
+        this.recorderContext.getRecorderChannelCallBack().onStart();
     }
 
     public void fillPacket(AVPacket packet) throws CommonFFmpegFrameRecorder.Exception {
@@ -30,5 +30,6 @@ public class Recorder {
 
     public void stop() throws CommonFFmpegFrameRecorder.Exception {
         this.recorderContext.getRecorder().stop();
+        this.recorderContext.getRecorderChannelCallBack().onStop();
     }
 }

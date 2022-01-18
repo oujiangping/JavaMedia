@@ -1,7 +1,9 @@
 package com.oujiangping.media.ffmpeg;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-import org.bytedeco.javacv.FrameRecorder;
+import lombok.NoArgsConstructor;
 
 /**
  * 功能描述：<>
@@ -10,6 +12,9 @@ import org.bytedeco.javacv.FrameRecorder;
  * @create 2022/1/18 10:01
  */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class RecorderContext {
     /**
      * 输出文件地址
@@ -30,6 +35,11 @@ public class RecorderContext {
      * 视频高度
      */
     private Integer height;
+
+    /**
+     * 是否
+     */
+    private Integer audioChannel;
 
     /**
      * 记录器回调接口
