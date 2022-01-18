@@ -98,6 +98,8 @@ public class MediaAgent implements MediaAgentInterface{
                 .height(player.getPlayerContext().getGrabber().getImageHeight())
                 .recorder(commonFFmpegFrameRecorder)
                 .recorderChannelCallBack(new MyRecorderChannelCallBack())
+                .frameRate(player.getPlayerContext().getGrabber().getFrameRate())
+                .videoBitrate(player.getPlayerContext().getGrabber().getVideoBitrate())
                 .build();
         recorder = new Recorder(recorderContext);
         recorder.start();

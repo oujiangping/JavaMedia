@@ -38,6 +38,16 @@ public class RecorderContext {
     private Integer height;
 
     /**
+     * 视频比特率
+     **/
+    private Integer videoBitrate;
+
+    /**
+     *视频帧率
+     **/
+    private Double frameRate;
+
+    /**
      * 是否
      */
     private Integer audioChannel;

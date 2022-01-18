@@ -23,22 +23,22 @@ import java.text.SimpleDateFormat;
 public class RecorderTest {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd__hhmmSSS");
 
-    private static final int RECORD_LENGTH = 5000;
+    private static final int RECORD_LENGTH = 50000;
 
     private static final boolean AUDIO_ENABLED = true;
 
     @Test
     public void  record() throws FrameGrabber.Exception, FrameRecorder.Exception {
 
-        String inputFile = "https://devstreaming-cdn.apple.com/videos/wwdc/2019/502gzyuhh8p2r8g8/502/0960/0960.m3u8";
+        String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
 
         // Decodes-encodes
-        String outputFile = "test1.m3u8";
-        //frameRecord(inputFile, outputFile);
+        String outputFile = "/Users/oujiangping/Downloads/mediaOut/test.flv";
+        frameRecord(inputFile, outputFile);
 
         // copies codec (no need to re-encode)
         //outputFile = "C:\\Users\\oujiangping\\Downloads\\202111181951.avi";
-        packetRecord(inputFile, outputFile);
+        //packetRecord(inputFile, outputFile);
 
     }
 
@@ -49,7 +49,9 @@ public class RecorderTest {
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.start();
 
-        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
+        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setFrameRate(grabber.getFrameRate());
+        recorder.setVideoBitrate(grabber.getVideoBitrate());
         recorder.start();
 
         Frame frame;

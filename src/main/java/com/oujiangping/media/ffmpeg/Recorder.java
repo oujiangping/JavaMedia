@@ -18,6 +18,8 @@ public class Recorder {
 
     public Recorder(RecorderContext recorderContext) {
         this.recorderContext = recorderContext;
+        recorderContext.getRecorder().setFrameRate(recorderContext.getFrameRate());
+        recorderContext.getRecorder().setVideoBitrate(recorderContext.getVideoBitrate());
     }
 
     public void start() throws FrameRecorder.Exception {
