@@ -1,43 +1,32 @@
 package com.oujiangping.media.ffmpeg;
 
+import org.bytedeco.ffmpeg.avcodec.AVCodec;
+import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
+import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.ffmpeg.avformat.*;
+import org.bytedeco.ffmpeg.avutil.AVDictionary;
+import org.bytedeco.ffmpeg.avutil.AVFrame;
+import org.bytedeco.ffmpeg.avutil.AVRational;
+import org.bytedeco.ffmpeg.swresample.SwrContext;
+import org.bytedeco.ffmpeg.swscale.SwsContext;
+import org.bytedeco.javacpp.*;
+import org.bytedeco.javacv.FFmpegLockCallback;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameRecorder;
+import org.bytedeco.javacv.Seekable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
+import java.nio.*;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.bytedeco.javacpp.BytePointer;
-import org.bytedeco.javacpp.DoublePointer;
-import org.bytedeco.javacpp.FloatPointer;
-import org.bytedeco.javacpp.IntPointer;
-import org.bytedeco.javacpp.Loader;
-import org.bytedeco.javacpp.Pointer;
-import org.bytedeco.javacpp.PointerScope;
-import org.bytedeco.javacpp.PointerPointer;
-import org.bytedeco.javacpp.ShortPointer;
-
-import org.bytedeco.ffmpeg.avcodec.*;
-import org.bytedeco.ffmpeg.avformat.*;
-import org.bytedeco.ffmpeg.avutil.*;
-import org.bytedeco.ffmpeg.swresample.*;
-import org.bytedeco.ffmpeg.swscale.*;
-import org.bytedeco.javacv.FFmpegLockCallback;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameRecorder;
-import org.bytedeco.javacv.Seekable;
-
 import static org.bytedeco.ffmpeg.global.avcodec.*;
-import static org.bytedeco.ffmpeg.global.avdevice.*;
+import static org.bytedeco.ffmpeg.global.avdevice.avdevice_register_all;
 import static org.bytedeco.ffmpeg.global.avformat.*;
 import static org.bytedeco.ffmpeg.global.avutil.*;
 import static org.bytedeco.ffmpeg.global.swresample.*;

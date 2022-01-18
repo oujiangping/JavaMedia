@@ -2,6 +2,7 @@ package com.oujiangping.media.ffmpeg;
 
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 
 /**
@@ -47,9 +48,9 @@ public class MediaAgent implements MediaAgentInterface{
      */
     public class MyPlayerPlayerChannelCallBack implements PlayerChannelCallBack {
         @Override
-        public void onPacket(AVPacket packet) {
+        public void onFrame(Frame frame) {
             try {
-                recorder.fillPacket(packet);
+                recorder.fillFrame(frame);
             } catch (CommonFFmpegFrameRecorder.Exception e) {
                 e.printStackTrace();
                 mediaAgentCallBack.onPacketError(e.getMessage());
@@ -90,7 +91,7 @@ public class MediaAgent implements MediaAgentInterface{
     @Override
     public void start() throws FFmpegFrameGrabber.Exception, FrameRecorder.Exception {
         player.start();
-        CommonFFmpegFrameRecorder commonFFmpegFrameRecorder = new CommonFFmpegFrameRecorder(this.dstUrl, player.getPlayerContext().getGrabber().getAudioChannels());
+        CommonFFmpegFrameRecorder commonFFmpegFrameRecorder = new CommonFFmpegFrameRecorder(this.dstUrl, player.getPlayerContext().getGrabber().getImageWidth(), player.getPlayerContext().getGrabber().getImageHeight(), player.getPlayerContext().getGrabber().getAudioChannels());
         recorderContext = RecorderContext.builder()
                 .outputPath(dstUrl)
                 .width(player.getPlayerContext().getGrabber().getImageWidth())

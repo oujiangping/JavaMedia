@@ -4,6 +4,7 @@ import com.oujiangping.media.ffmpeg.PlayerChannelCallBack;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,10 +22,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class PlayerTest {
     @Test
     public void testPlayer() throws FFmpegFrameGrabber.Exception {
-        Player player = new Player("https://devstreaming-cdn.apple.com/videos/wwdc/2019/502gzyuhh8p2r8g8/502/0960/0960.m3u8", new PlayerChannelCallBack() {
+        Player player = new Player("http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8", new PlayerChannelCallBack() {
             @Override
-            public void onPacket(AVPacket packet) {
-                System.out.println("onPacket");
+            public void onFrame(Frame frame) {
+                System.out.println("onFrame");
             }
 
             @Override
@@ -38,5 +39,6 @@ public class PlayerTest {
             }
         });
         player.start();
+        player.play();
     }
 }

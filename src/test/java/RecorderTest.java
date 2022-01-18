@@ -33,7 +33,7 @@ public class RecorderTest {
         String inputFile = "https://devstreaming-cdn.apple.com/videos/wwdc/2019/502gzyuhh8p2r8g8/502/0960/0960.m3u8";
 
         // Decodes-encodes
-        String outputFile = "C:\\Users\\oujiangping\\Downloads\\test1.m3u8";
+        String outputFile = "test1.m3u8";
         //frameRecord(inputFile, outputFile);
 
         // copies codec (no need to re-encode)

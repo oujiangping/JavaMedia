@@ -1,6 +1,7 @@
 package com.oujiangping.media.ffmpeg;
 
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 
 /**
@@ -24,8 +25,8 @@ public class Recorder {
         this.recorderContext.getRecorderChannelCallBack().onStart();
     }
 
-    public void fillPacket(AVPacket packet) throws CommonFFmpegFrameRecorder.Exception {
-        this.recorderContext.getRecorder().recordPacket(packet);
+    public void fillFrame(Frame frame) throws CommonFFmpegFrameRecorder.Exception {
+        this.recorderContext.getRecorder().record(frame);
     }
 
     public void stop() throws CommonFFmpegFrameRecorder.Exception {

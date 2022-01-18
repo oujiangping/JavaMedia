@@ -2,6 +2,7 @@ package com.oujiangping.media.ffmpeg;
 
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
 
 /**
  * 功能描述：<>
@@ -46,9 +47,9 @@ public class Player {
     }
 
     public void play() throws FFmpegFrameGrabber.Exception {
-        AVPacket avPacket = null;
-        while((avPacket = playerContext.getGrabber().grabPacket()) != null) {
-            playerContext.getCallBack().onPacket(avPacket);
+        Frame frame = null;
+        while((frame = playerContext.getGrabber().grabFrame(true, true, true, false)) != null) {
+            playerContext.getCallBack().onFrame(frame);
         }
         playerContext.getGrabber().stop();
         playerContext.getCallBack().onStop();

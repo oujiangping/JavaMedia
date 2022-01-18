@@ -1,6 +1,7 @@
 package com.oujiangping.media.ffmpeg;
 
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.javacv.Frame;
 
 /**
  * 功能描述：<>
@@ -16,7 +17,7 @@ public interface PlayerChannelCallBack {
      * @author: oujiangping
      * @date: 2022/1/17 16:10
      */
-    void onPacket(AVPacket packet);
+    void onFrame(Frame frame);
 
     /**
      * 功能描述: 开始播放事件
