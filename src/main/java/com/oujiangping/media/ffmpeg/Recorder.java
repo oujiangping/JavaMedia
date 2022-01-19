@@ -19,6 +19,10 @@ public class Recorder {
         this.recorderContext = recorderContext;
         recorderContext.getRecorder().setFrameRate(recorderContext.getFrameRate());
         recorderContext.getRecorder().setVideoBitrate(recorderContext.getVideoBitrate());
+        String extFormat = null;
+        if((extFormat = FormatHelper.extGuessFormat(recorderContext.getOutputPath())) != null) {
+            recorderContext.getRecorder().setFormat(extFormat);
+        }
     }
 
     public void start() throws FrameRecorder.Exception {

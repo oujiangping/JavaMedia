@@ -22,7 +22,7 @@ public class MediaAgentTest {
     @Test
     public void mediaAgentTest() throws FFmpegFrameGrabber.Exception, FrameRecorder.Exception {
         FFmpegLogCallback.set();
-        MediaAgent mediaAgent = new MediaAgent("rtmp://ns8.indexforce.com/home/mystream"/*"http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8"*/, "mediaOut/test.ts", new MediaAgentCallBack() {
+        MediaAgent mediaAgent = new MediaAgent("rtmp://ns8.indexforce.com/home/mystream"/*"http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8"*/, "rtmp://1.14.103.148:32176/live/test"/*"mediaOut/test.ts"*/, new MediaAgentCallBack() {
             @Override
             public void onPacketError(String msg) {
                 System.out.println("onPacketError" + msg);
