@@ -1,7 +1,7 @@
 package com.oujiangping.media.ffmpeg;
 
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 
@@ -72,16 +72,17 @@ public class MediaAgent implements MediaAgentInterface{
 
         @Override
         public void onStart() {
-
+            mediaAgentCallBack.onRecordStart();
         }
 
         @Override
         public void onStop() {
-
+            mediaAgentCallBack.onRecordStop();
         }
     }
 
     public MediaAgent(String sourceUrl, String dstUrl, MediaAgentCallBack callBack) {
+        FFmpegLogCallback.set();
         this.mediaAgentCallBack = callBack;
         this.player = new Player(sourceUrl, new MyPlayerPlayerChannelCallBack());
         this.sourceUrl = sourceUrl;

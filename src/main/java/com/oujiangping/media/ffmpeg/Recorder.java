@@ -1,6 +1,5 @@
 package com.oujiangping.media.ffmpeg;
 
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 

@@ -1043,6 +1043,9 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 //        } else {
             /* encode the image */
             picture.quality(video_c.global_quality());
+            if (image == null || image.length == 0) {
+                return false;
+            }
             if ((ret = avcodec_send_frame(video_c, image == null || image.length == 0 ? null : picture)) < 0
                     && image != null && image.length != 0) {
                 throw new Exception("avcodec_send_frame() error " + ret + ": Error sending a video frame for encoding.");

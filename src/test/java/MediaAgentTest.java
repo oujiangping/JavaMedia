@@ -3,6 +3,7 @@ import com.oujiangping.media.ffmpeg.MediaAgent;
 import com.oujiangping.media.ffmpeg.MediaAgentCallBack;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.FFmpegLogCallback;
 import org.bytedeco.javacv.FrameRecorder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,20 +21,36 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class MediaAgentTest {
     @Test
     public void mediaAgentTest() throws FFmpegFrameGrabber.Exception, FrameRecorder.Exception {
-        MediaAgent mediaAgent = new MediaAgent("http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8", "/Users/oujiangping/Downloads/mediaOut/test.flv", new MediaAgentCallBack() {
+        FFmpegLogCallback.set();
+        MediaAgent mediaAgent = new MediaAgent("rtmp://ns8.indexforce.com/home/mystream"/*"http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8"*/, "mediaOut/test.ts", new MediaAgentCallBack() {
             @Override
             public void onPacketError(String msg) {
-                System.out.println("fuck onPacketError" + msg);
+                System.out.println("onPacketError" + msg);
             }
 
             @Override
             public void onPlayerStart() {
-                System.out.println("fuck onPlayerStart");
+                log.info("onPlayerStart");
+            }
+
+            @Override
+            public void onPlayerPlay() {
+                log.info("onPlayerPlay");
             }
 
             @Override
             public void onPlayerStop() {
-                System.out.println("fuck onPlayerStop");
+                log.info("onPlayerStop");
+            }
+
+            @Override
+            public void onRecordStart() {
+                log.info("onRecordStart");
+            }
+
+            @Override
+            public void onRecordStop() {
+                log.info("onRecordStop");
             }
         });
         mediaAgent.start();

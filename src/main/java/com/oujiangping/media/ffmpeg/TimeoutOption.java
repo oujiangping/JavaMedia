@@ -29,7 +29,9 @@ public enum TimeoutOption {
      *
      * http://ffmpeg.org/ffmpeg-all.html#rtsp
      */
-    STIMEOUT;
+    STIMEOUT,
+
+    LISTEN_TIMEOUT;
 
     public String getKey() {
         return toString().toLowerCase();

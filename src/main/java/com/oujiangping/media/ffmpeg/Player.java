@@ -28,10 +28,7 @@ public class Player {
     public Player(String url, Integer timeout, PlayerChannelCallBack callBack) {
         this.playerContext = new PlayerContext();
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(url);
-        grabber.setOption(
-                TimeoutOption.STIMEOUT.getKey(),
-                String.valueOf(timeout * 1000000)
-        );
+        FormatHelper.setPlayerTimeoutOption(grabber, url, timeout);
         playerContext.setGrabber(grabber);
         playerContext.setSourceUrl(url);
         playerContext.setCallBack(callBack);
