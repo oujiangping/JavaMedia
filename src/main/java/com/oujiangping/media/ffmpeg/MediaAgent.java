@@ -11,7 +11,7 @@ import org.bytedeco.javacv.FrameRecorder;
  * @author oujiangping
  * @create 2022/1/18 14:16
  */
-public class MediaAgent implements MediaAgentInterface{
+public class MediaAgent implements MediaAgentInterface, Runnable{
     /**
      * 播放器
      */
@@ -28,9 +28,14 @@ public class MediaAgent implements MediaAgentInterface{
     private MediaAgentCallBack mediaAgentCallBack;
 
     /**
-     * 录像器回调
+     * 录像器持有的实例
      */
     private RecorderContext recorderContext;
+
+    /**
+     * 播放器持有的实例
+     */
+    private PlayerContext playerContext;
 
     /**
      * 源地址
@@ -41,6 +46,15 @@ public class MediaAgent implements MediaAgentInterface{
      * 目的地址
      */
     private String dstUrl;
+
+    @Override
+    public void run() {
+        try {
+            play();
+        } catch (FFmpegFrameGrabber.Exception | CommonFFmpegFrameRecorder.Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 
     /**
@@ -81,12 +95,14 @@ public class MediaAgent implements MediaAgentInterface{
         }
     }
 
-    public MediaAgent(String sourceUrl, String dstUrl, MediaAgentCallBack callBack) {
+    public MediaAgent(String url, String dstUrl, MediaAgentCallBack callBack) {
         FFmpegLogCallback.set();
-        this.mediaAgentCallBack = callBack;
-        this.player = new Player(sourceUrl, new MyPlayerPlayerChannelCallBack());
-        this.sourceUrl = sourceUrl;
+        this.sourceUrl = url;
         this.dstUrl = dstUrl;
+        this.mediaAgentCallBack = callBack;
+        this.playerContext = new PlayerContext();
+        playerContext.setSourceUrl(this.sourceUrl);
+        this.player = new Player(playerContext, new MyPlayerPlayerChannelCallBack());
     }
 
     @Override
@@ -94,7 +110,7 @@ public class MediaAgent implements MediaAgentInterface{
         player.start();
         CommonFFmpegFrameRecorder commonFFmpegFrameRecorder = new CommonFFmpegFrameRecorder(this.dstUrl, player.getPlayerContext().getGrabber().getImageWidth(), player.getPlayerContext().getGrabber().getImageHeight(), player.getPlayerContext().getGrabber().getAudioChannels());
         recorderContext = RecorderContext.builder()
-                .outputPath(dstUrl)
+                .outputPath(this.dstUrl)
                 .width(player.getPlayerContext().getGrabber().getImageWidth())
                 .height(player.getPlayerContext().getGrabber().getImageHeight())
                 .recorder(commonFFmpegFrameRecorder)
@@ -107,13 +123,13 @@ public class MediaAgent implements MediaAgentInterface{
     }
 
     @Override
-    public void play() throws FFmpegFrameGrabber.Exception {
+    public void play() throws FFmpegFrameGrabber.Exception, CommonFFmpegFrameRecorder.Exception {
         player.play();
+        recorder.stop();
     }
 
     @Override
-    public void stop() throws FFmpegFrameGrabber.Exception, CommonFFmpegFrameRecorder.Exception {
+    public void stop() {
         player.stop();
-        recorder.stop();
     }
 }

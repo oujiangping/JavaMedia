@@ -1,6 +1,7 @@
 import com.oujiangping.media.MediaApplication;
 import com.oujiangping.media.ffmpeg.Player;
 import com.oujiangping.media.ffmpeg.PlayerChannelCallBack;
+import com.oujiangping.media.ffmpeg.PlayerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
@@ -22,7 +23,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class PlayerTest {
     @Test
     public void testPlayer() throws FFmpegFrameGrabber.Exception {
-        Player player = new Player("http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8", new PlayerChannelCallBack() {
+        PlayerContext playerContext = new PlayerContext();
+        playerContext.setSourceUrl("http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8");
+        Player player = new Player(playerContext, new PlayerChannelCallBack() {
             @Override
             public void onFrame(Frame frame) {
                 System.out.println("onFrame");

@@ -25,4 +25,28 @@ public class PlayerContext {
      * 回调
      */
     private PlayerChannelCallBack callBack;
+
+    /**
+     * 状态
+     */
+    private volatile Status status;
+
+    public enum  Status {
+        /**
+         * 已经初始化
+         */
+        INIT,
+        /**
+         * 已经开始
+         */
+        START,
+        /**
+         * 正在运行
+         */
+        RUNNING,
+        /**
+         * 已经停止
+         */
+        STOP
+    }
 }
