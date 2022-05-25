@@ -1,6 +1,11 @@
 package com.oujiangping.media.server;
 
+import com.oujiangping.media.ffmpeg.CommonFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
+import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
+import org.bytedeco.javacv.FrameRecorder;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -20,6 +25,9 @@ import java.nio.ByteBuffer;
 @Slf4j
 @ServerEndpoint("/media/play.flv")
 public class MediaServer {
+    private static final int RECORD_LENGTH = 50000;
+
+    private static final boolean AUDIO_ENABLED = true;
 
     @OnOpen
     public void onOpen(Session session) {
@@ -37,16 +45,7 @@ public class MediaServer {
         @Override
         public void run() {
             try {
-                File file = new File("flv_h264.flv");
-                FileInputStream fileInputStream = new FileInputStream(file);
-                InputStream fis = new BufferedInputStream(fileInputStream);
-                byte[] buffer = new byte[2048];
-                int len = 0;
-                while ((len = fis.read(buffer)) > 0) {
-                    log.info("write data {}", len);
-                    session.getBasicRemote().sendBinary(ByteBuffer.wrap(buffer, 0, len));
-                }
-                fis.close();
+                record(session);
             } catch (IOException ex) {
                 ex.printStackTrace();
             } finally {
@@ -67,5 +66,39 @@ public class MediaServer {
     @OnMessage
     public void OnMessage(String message, Session session) {
 
+    }
+
+    public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception {
+
+        String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
+
+        // Decodes-encodes
+        String outputFile = "test_0.flv";
+        frameRecord(session, inputFile, outputFile);
+
+    }
+
+    public static void frameRecord(Session session, String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
+
+        int audioChannel = AUDIO_ENABLED ? 1 : 0;
+
+        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
+        grabber.start();
+
+        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, outputFile, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setFrameRate(grabber.getFrameRate());
+        recorder.setVideoBitrate(grabber.getVideoBitrate());
+        recorder.start();
+
+        Frame frame;
+        long t1 = System.currentTimeMillis();
+        while ((frame = grabber.grabFrame(AUDIO_ENABLED, true, true, false)) != null) {
+            recorder.record(frame);
+            if ((System.currentTimeMillis() - t1) > RECORD_LENGTH) {
+                break;
+            }
+        }
+        recorder.stop();
+        grabber.stop();
     }
 }

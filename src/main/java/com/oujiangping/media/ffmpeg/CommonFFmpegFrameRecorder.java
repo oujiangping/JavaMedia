@@ -1,5 +1,6 @@
 package com.oujiangping.media.ffmpeg;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
@@ -15,6 +16,7 @@ import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 import org.bytedeco.javacv.Seekable;
 
+import javax.websocket.Session;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,8 +37,11 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
 /**
  * @author Samuel Audet
  */
+@Slf4j
 public class CommonFFmpegFrameRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
+
+    private Session session;
 
     public static class Exception extends FrameRecorder.Exception {
         public Exception(String message) {
@@ -113,6 +118,11 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
     public CommonFFmpegFrameRecorder(File file, int imageWidth, int imageHeight, int audioChannels) {
         this(file.getAbsolutePath(), imageWidth, imageHeight, audioChannels);
+    }
+
+    public CommonFFmpegFrameRecorder(Session session, String filename, int imageWidth, int imageHeight, int audioChannels) {
+        this(filename, imageWidth, imageHeight, audioChannels);
+        this.session = session;
     }
 
     public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight, int audioChannels) {
@@ -289,6 +299,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         @Override
         public int call(Pointer opaque, BytePointer buf, int buf_size) {
             try {
+                log.info("fuco ------- {}", buf_size);
                 byte[] b = new byte[buf_size];
                 OutputStream os = outputStreams.get(opaque);
                 buf.get(b, 0, buf_size);
@@ -476,7 +487,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
                 if (videoCodec != AV_CODEC_ID_NONE) {
                     oformat.video_codec(videoCodec);
                 } else if ("flv".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_FLV1);
+                    oformat.video_codec(AV_CODEC_ID_H264);
                 } else if ("mp4".equals(format_name)) {
                     oformat.video_codec(AV_CODEC_ID_MPEG4);
                 } else if ("3gp".equals(format_name)) {
@@ -1309,6 +1320,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
         synchronized (oc) {
             int ret;
+            log.info("write data");
             if (interleaved && avStream != null) {
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
                     throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
@@ -1316,6 +1328,15 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             } else {
                 if ((ret = av_write_frame(oc, avPacket)) < 0) {
                     throw new Exception("av_write_frame() error " + ret + " while writing " + mediaTypeStr + " packet.");
+                }
+            }
+            if(session != null && avPacket != null && avPacket.data() != null && avPacket.data().getStringBytes().length > 0) {
+                try {
+                    log.info("write data0 {}", avPacket.data().getStringBytes().length);
+                    log.info("write data1 {}", avPacket.data().getStringBytes().length);
+                    session.getBasicRemote().sendBinary(ByteBuffer.wrap(avPacket.data().getStringBytes()));
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
