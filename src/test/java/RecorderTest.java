@@ -33,7 +33,7 @@ public class RecorderTest {
         String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
 
         // Decodes-encodes
-        String outputFile = "/Users/oujiangping/Downloads/mediaOut/test.flv";
+        String outputFile = "test.flv";
         frameRecord(inputFile, outputFile);
 
     }
