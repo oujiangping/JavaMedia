@@ -36,10 +36,6 @@ public class RecorderTest {
         String outputFile = "/Users/oujiangping/Downloads/mediaOut/test.flv";
         frameRecord(inputFile, outputFile);
 
-        // copies codec (no need to re-encode)
-        //outputFile = "C:\\Users\\oujiangping\\Downloads\\202111181951.avi";
-        //packetRecord(inputFile, outputFile);
-
     }
 
     public static void frameRecord(String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
