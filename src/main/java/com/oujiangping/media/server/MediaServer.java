@@ -84,7 +84,8 @@ public class MediaServer {
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.start();
 
-        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, outputFile, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
         recorder.setVideoBitrate(grabber.getVideoBitrate());
         recorder.setInterleaved(true);

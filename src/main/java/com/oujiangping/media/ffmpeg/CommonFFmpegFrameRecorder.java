@@ -97,8 +97,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     }
 
 
-    public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight, int audioChannels) {
-        this.filename = filename;
+    public CommonFFmpegFrameRecorder(int imageWidth, int imageHeight, int audioChannels) {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.audioChannels = audioChannels;
@@ -116,8 +115,8 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public CommonFFmpegFrameRecorder(Session session, String fileName, int imageWidth, int imageHeight, int audioChannels) {
-        this(fileName, imageWidth, imageHeight, audioChannels);
+    public CommonFFmpegFrameRecorder(Session session, int imageWidth, int imageHeight, int audioChannels) {
+        this(imageWidth, imageHeight, audioChannels);
         this.session = session;
     }
 
@@ -216,7 +215,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         }
         video_st = null;
         audio_st = null;
-        filename = null;
 
         AVFormatContext outputStreamKey = oc;
         if (oc != null && !oc.isNull()) {
@@ -299,7 +297,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     static SeekCallback seekCallback = new SeekCallback().retainReference();
 
     private AVIOContext avio;
-    private String filename;
     private AVFrame picture, tmp_picture;
     private BytePointer picture_buf;
     private BytePointer video_outbuf;
@@ -393,19 +390,13 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
             /* auto detect the output format from the name. */
             String format_name = format == null || format.length() == 0 ? null : format;
-            if ((oformat = av_guess_format(format_name, filename, null)) == null) {
-                int proto = filename.indexOf("://");
-                if (proto > 0) {
-                    format_name = filename.substring(0, proto);
-                }
-                if ((oformat = av_guess_format(format_name, filename, null)) == null) {
-                    throw new Exception("av_guess_format() error: Could not guess output format for \"" + filename + "\" and " + format + " format.");
-                }
+            if ((oformat = av_guess_format(format_name, null, null)) == null) {
+                throw new Exception("av_guess_format() error: Could not guess output format  \"" + "\" and " + format + " format.");
             }
             format_name = oformat.name().getString();
 
             /* allocate the output media context */
-            if (avformat_alloc_output_context2(oc, null, format_name, filename) < 0) {
+            if (avformat_alloc_output_context2(oc, null, format_name, null) < 0) {
                 throw new Exception("avformat_alloc_context2() error:\tCould not allocate format context");
             }
 
@@ -413,14 +404,13 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             avio = avio_alloc_context(new BytePointer(av_malloc(4096)), 4096, 1, oc, null, writeCallback, seekCallback);
             oc.pb(avio);
 
-            filename = "test1";
             outputStreams.put(oc, CustomerData.builder()
                     .session(session)
-                    .fileName(filename)
+                    .fileName("")
                     .build());
 
             oc.oformat(oformat);
-            oc.filename().putString(filename);
+            oc.filename().putString("");
             oc.max_delay(maxDelay);
 
         /* add the audio and video streams using the format codecs
@@ -854,16 +844,12 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             }
             /* write the stream header, if any */
             if ((ret = avformat_write_header(oc.metadata(metadata), options)) < 0) {
-                String errorMsg = "avformat_write_header error() error " + ret + ": Could not write header to '" + filename + "'";
+                String errorMsg = "avformat_write_header error() error " + ret + ": Could not write header to '"  + "'";
                 releaseUnsafe();
                 av_dict_free(options);
                 throw new Exception(errorMsg);
             }
             av_dict_free(options);
-
-            if (av_log_get_level() >= AV_LOG_INFO) {
-                av_dump_format(oc, 0, filename, 1);
-            }
 
             started = true;
 
