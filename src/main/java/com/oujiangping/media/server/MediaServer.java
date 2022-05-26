@@ -31,6 +31,7 @@ public class MediaServer {
 
     @OnOpen
     public void onOpen(Session session) {
+        log.info("onOpen");
         Thread mediaThread = new Thread(new MediaRunnable(session));
         mediaThread.start();
     }
@@ -68,26 +69,26 @@ public class MediaServer {
 
     }
 
-    public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception {
+    public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
 
         String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
 
         // Decodes-encodes
-        String outputFile = "test_0.flv";
+        String outputFile = "test_00.flv";
+        log.info("record");
         frameRecord(session, inputFile, outputFile);
 
     }
 
-    public static void frameRecord(Session session, String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
-
-        int audioChannel = AUDIO_ENABLED ? 1 : 0;
-
+    public static void frameRecord(Session session, String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.start();
 
-        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, outputFile, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        FileOutputStream outputStream = new FileOutputStream("111.flv");
+        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, outputFile, outputStream, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFrameRate(grabber.getFrameRate());
         recorder.setVideoBitrate(grabber.getVideoBitrate());
+        recorder.setInterleaved(true);
         recorder.start();
 
         Frame frame;

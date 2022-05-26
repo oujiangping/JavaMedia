@@ -1,5 +1,9 @@
 package com.oujiangping.media.ffmpeg;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVCodec;
 import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
@@ -53,14 +57,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         }
     }
 
-    public static CommonFFmpegFrameRecorder createDefault(File f, int w, int h) throws Exception {
-        return new CommonFFmpegFrameRecorder(f, w, h);
-    }
-
-    public static CommonFFmpegFrameRecorder createDefault(String f, int w, int h) throws Exception {
-        return new CommonFFmpegFrameRecorder(f, w, h);
-    }
-
     private static Exception loadingException = null;
 
     public static void tryLoad() throws Exception {
@@ -100,30 +96,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         }
     }
 
-    public CommonFFmpegFrameRecorder(File file, int audioChannels) {
-        this(file, 0, 0, audioChannels);
-    }
-
-    public CommonFFmpegFrameRecorder(String filename, int audioChannels) {
-        this(filename, 0, 0, audioChannels);
-    }
-
-    public CommonFFmpegFrameRecorder(File file, int imageWidth, int imageHeight) {
-        this(file, imageWidth, imageHeight, 0);
-    }
-
-    public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight) {
-        this(filename, imageWidth, imageHeight, 0);
-    }
-
-    public CommonFFmpegFrameRecorder(File file, int imageWidth, int imageHeight, int audioChannels) {
-        this(file.getAbsolutePath(), imageWidth, imageHeight, audioChannels);
-    }
-
-    public CommonFFmpegFrameRecorder(Session session, String filename, int imageWidth, int imageHeight, int audioChannels) {
-        this(filename, imageWidth, imageHeight, audioChannels);
-        this.session = session;
-    }
 
     public CommonFFmpegFrameRecorder(String filename, int imageWidth, int imageHeight, int audioChannels) {
         this.filename = filename;
@@ -144,22 +116,32 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public CommonFFmpegFrameRecorder(OutputStream outputStream, int audioChannels) {
-        this(outputStream.toString(), audioChannels);
+    public CommonFFmpegFrameRecorder(Session session, String fileName, OutputStream outputStream, int imageWidth, int imageHeight, int audioChannels) {
+        this(fileName, imageWidth, imageHeight, audioChannels);
         this.outputStream = outputStream;
         this.closeOutputStream = true;
+        this.session = session;
     }
 
-    public CommonFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight) {
-        this(outputStream.toString(), imageWidth, imageHeight);
-        this.outputStream = outputStream;
-        this.closeOutputStream = true;
-    }
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class CustomerData {
+        /**
+         * websect的session
+         */
+        private Session session;
 
-    public CommonFFmpegFrameRecorder(OutputStream outputStream, int imageWidth, int imageHeight, int audioChannels) {
-        this(outputStream.toString(), imageWidth, imageHeight, audioChannels);
-        this.outputStream = outputStream;
-        this.closeOutputStream = true;
+        /**
+         * 文件名称
+         */
+        private String fileName;
+
+        /**
+         * 文件名称
+         */
+        private OutputStream outputStream;
     }
 
     @Override
@@ -293,17 +275,29 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         release();
     }
 
-    static Map<Pointer, OutputStream> outputStreams = Collections.synchronizedMap(new HashMap<Pointer, OutputStream>());
+    static Map<Pointer, CustomerData> outputStreams = Collections.synchronizedMap(new HashMap<Pointer, CustomerData>());
 
     static class WriteCallback extends Write_packet_Pointer_BytePointer_int {
         @Override
         public int call(Pointer opaque, BytePointer buf, int buf_size) {
+            System.out.println("WriteCallback.call");
+            log.info("WriteCallback.call {}", buf_size);
             try {
-                log.info("fuco ------- {}", buf_size);
                 byte[] b = new byte[buf_size];
-                OutputStream os = outputStreams.get(opaque);
+                OutputStream os = outputStreams.get(opaque).getOutputStream();
                 buf.get(b, 0, buf_size);
                 os.write(b, 0, buf_size);
+
+                Session session = outputStreams.get(opaque).getSession();
+                if(session != null && buf_size > 0) {
+                    try {
+                        log.info("session write data {}", buf_size);
+                        session.getBasicRemote().sendBinary(ByteBuffer.wrap(b, 0, buf_size));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
                 return buf_size;
             } catch (Throwable t) {
                 System.err.println("Error on OutputStream.write(): " + t);
@@ -319,7 +313,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         @Override
         public long call(Pointer opaque, long offset, int whence) {
             try {
-                OutputStream os = outputStreams.get(opaque);
+                OutputStream os = outputStreams.get(opaque).getOutputStream();
                 ((Seekable) os).seek(offset, whence);
                 return 0;
             } catch (Throwable t) {
@@ -408,6 +402,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     }
 
     public synchronized void startUnsafe() throws Exception {
+        log.info("startUnsafe");
         try (PointerScope scope = new PointerScope()) {
 
             if (oc != null && !oc.isNull()) {
@@ -452,11 +447,16 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             }
 
             if (outputStream != null) {
+                oc.flags(0x0080 | oc.flags());
                 avio = avio_alloc_context(new BytePointer(av_malloc(4096)), 4096, 1, oc, null, writeCallback, outputStream instanceof Seekable ? seekCallback : null);
                 oc.pb(avio);
 
                 filename = outputStream.toString();
-                outputStreams.put(oc, outputStream);
+                outputStreams.put(oc, CustomerData.builder()
+                        .outputStream(outputStream)
+                        .session(session)
+                        .fileName(filename)
+                        .build());
             }
             oc.oformat(oformat);
             oc.filename().putString(filename);
@@ -1320,7 +1320,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
         synchronized (oc) {
             int ret;
-            log.info("write data");
             if (interleaved && avStream != null) {
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
                     throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
@@ -1328,15 +1327,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             } else {
                 if ((ret = av_write_frame(oc, avPacket)) < 0) {
                     throw new Exception("av_write_frame() error " + ret + " while writing " + mediaTypeStr + " packet.");
-                }
-            }
-            if(session != null && avPacket != null && avPacket.data() != null && avPacket.data().getStringBytes().length > 0) {
-                try {
-                    log.info("write data0 {}", avPacket.data().getStringBytes().length);
-                    log.info("write data1 {}", avPacket.data().getStringBytes().length);
-                    session.getBasicRemote().sendBinary(ByteBuffer.wrap(avPacket.data().getStringBytes()));
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
         }
