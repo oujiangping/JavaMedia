@@ -116,10 +116,8 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public CommonFFmpegFrameRecorder(Session session, String fileName, OutputStream outputStream, int imageWidth, int imageHeight, int audioChannels) {
+    public CommonFFmpegFrameRecorder(Session session, String fileName, int imageWidth, int imageHeight, int audioChannels) {
         this(fileName, imageWidth, imageHeight, audioChannels);
-        this.outputStream = outputStream;
-        this.closeOutputStream = true;
         this.session = session;
     }
 
@@ -137,11 +135,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
          * 文件名称
          */
         private String fileName;
-
-        /**
-         * 文件名称
-         */
-        private OutputStream outputStream;
     }
 
     @Override
@@ -227,11 +220,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
         AVFormatContext outputStreamKey = oc;
         if (oc != null && !oc.isNull()) {
-            if (outputStream == null && (oformat.flags() & AVFMT_NOFILE) == 0) {
-                /* close the output file */
-                avio_close(oc.pb());
-            }
-
             /* free the streams */
             avformat_free_context(oc);
             oc = null;
@@ -247,25 +235,14 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             samples_convert_ctx = null;
         }
 
-        if (outputStream != null) {
-            try {
-                if (closeOutputStream) {
-                    outputStream.close();
-                }
-            } catch (IOException ex) {
-                throw new Exception("Error on OutputStream.close(): ", ex);
-            } finally {
-                outputStream = null;
-                outputStreams.remove(outputStreamKey);
-                if (avio != null) {
-                    if (avio.buffer() != null) {
-                        av_free(avio.buffer());
-                        avio.buffer(null);
-                    }
-                    av_free(avio);
-                    avio = null;
-                }
+        outputStreams.remove(outputStreamKey);
+        if (avio != null) {
+            if (avio.buffer() != null) {
+                av_free(avio.buffer());
+                avio.buffer(null);
             }
+            av_free(avio);
+            avio = null;
         }
     }
 
@@ -284,12 +261,10 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             log.info("WriteCallback.call {}", buf_size);
             try {
                 byte[] b = new byte[buf_size];
-                OutputStream os = outputStreams.get(opaque).getOutputStream();
                 buf.get(b, 0, buf_size);
-                os.write(b, 0, buf_size);
 
                 Session session = outputStreams.get(opaque).getSession();
-                if(session != null && buf_size > 0) {
+                if (session != null && buf_size > 0) {
                     try {
                         log.info("session write data {}", buf_size);
                         session.getBasicRemote().sendBinary(ByteBuffer.wrap(b, 0, buf_size));
@@ -313,8 +288,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         @Override
         public long call(Pointer opaque, long offset, int whence) {
             try {
-                OutputStream os = outputStreams.get(opaque).getOutputStream();
-                ((Seekable) os).seek(offset, whence);
                 return 0;
             } catch (Throwable t) {
                 System.err.println("Error on OutputStream.seek(): " + t);
@@ -325,8 +298,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
     static SeekCallback seekCallback = new SeekCallback().retainReference();
 
-    private OutputStream outputStream;
-    private boolean closeOutputStream;
     private AVIOContext avio;
     private String filename;
     private AVFrame picture, tmp_picture;
@@ -353,14 +324,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     private AVFormatContext ifmt_ctx;
 
     private volatile boolean started = false;
-
-    public boolean isCloseOutputStream() {
-        return closeOutputStream;
-    }
-
-    public void setCloseOutputStream(boolean closeOutputStream) {
-        this.closeOutputStream = closeOutputStream;
-    }
 
     @Override
     public int getFrameNumber() {
@@ -446,18 +409,16 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
                 throw new Exception("avformat_alloc_context2() error:\tCould not allocate format context");
             }
 
-            if (outputStream != null) {
-                oc.flags(0x0080 | oc.flags());
-                avio = avio_alloc_context(new BytePointer(av_malloc(4096)), 4096, 1, oc, null, writeCallback, outputStream instanceof Seekable ? seekCallback : null);
-                oc.pb(avio);
+            oc.flags(0x0080 | oc.flags());
+            avio = avio_alloc_context(new BytePointer(av_malloc(4096)), 4096, 1, oc, null, writeCallback, seekCallback);
+            oc.pb(avio);
 
-                filename = outputStream.toString();
-                outputStreams.put(oc, CustomerData.builder()
-                        .outputStream(outputStream)
-                        .session(session)
-                        .fileName(filename)
-                        .build());
-            }
+            filename = "test1";
+            outputStreams.put(oc, CustomerData.builder()
+                    .session(session)
+                    .fileName(filename)
+                    .build());
+
             oc.oformat(oformat);
             oc.filename().putString(filename);
             oc.max_delay(maxDelay);
@@ -885,18 +846,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             AVDictionary options = new AVDictionary(null);
             for (Entry<String, String> e : this.options.entrySet()) {
                 av_dict_set(options, e.getKey(), e.getValue(), 0);
-            }
-
-            /* open the output file, if needed */
-            if (outputStream == null && (oformat.flags() & AVFMT_NOFILE) == 0) {
-                AVIOContext pb = new AVIOContext(null);
-                if ((ret = avio_open2(pb, filename, AVIO_FLAG_WRITE, null, options)) < 0) {
-                    String errorMsg = "avio_open2 error() error " + ret + ": Could not open '" + filename + "'";
-                    releaseUnsafe();
-                    av_dict_free(options);
-                    throw new Exception(errorMsg);
-                }
-                oc.pb(pb);
             }
 
             AVDictionary metadata = new AVDictionary(null);
@@ -1348,7 +1297,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
         AVStream in_stream = ifmt_ctx.streams(pkt.stream_index());
 /**
- * Repair the problem of error decoding and playback caused by the absence of dts/pts 
+ * Repair the problem of error decoding and playback caused by the absence of dts/pts
  * in the output audio/video file or audio/video stream,
  * Comment out this line of code so that PTS / DTS can specify the timestamp manually.
  */
