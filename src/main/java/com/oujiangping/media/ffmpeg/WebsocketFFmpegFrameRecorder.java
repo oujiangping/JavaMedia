@@ -18,12 +18,9 @@ import org.bytedeco.javacpp.*;
 import org.bytedeco.javacv.FFmpegLockCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
-import org.bytedeco.javacv.Seekable;
 
 import javax.websocket.Session;
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.*;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -42,7 +39,7 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
  * @author Samuel Audet
  */
 @Slf4j
-public class CommonFFmpegFrameRecorder extends FrameRecorder {
+public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
 
     private Session session;
@@ -82,7 +79,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
                 if (t instanceof Exception) {
                     throw loadingException = (Exception) t;
                 } else {
-                    throw loadingException = new Exception("Failed to load " + CommonFFmpegFrameRecorder.class, t);
+                    throw loadingException = new Exception("Failed to load " + WebsocketFFmpegFrameRecorder.class, t);
                 }
             }
         }
@@ -97,7 +94,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     }
 
 
-    public CommonFFmpegFrameRecorder(int imageWidth, int imageHeight, int audioChannels) {
+    public WebsocketFFmpegFrameRecorder(int imageWidth, int imageHeight, int audioChannels) {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.audioChannels = audioChannels;
@@ -115,7 +112,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public CommonFFmpegFrameRecorder(Session session, int imageWidth, int imageHeight, int audioChannels) {
+    public WebsocketFFmpegFrameRecorder(Session session, int imageWidth, int imageHeight, int audioChannels) {
         this(imageWidth, imageHeight, audioChannels);
         this.session = session;
     }
@@ -129,11 +126,6 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
          * websect的session
          */
         private Session session;
-
-        /**
-         * 文件名称
-         */
-        private String fileName;
     }
 
     @Override
@@ -253,19 +245,24 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     static Map<Pointer, CustomerData> outputStreams = Collections.synchronizedMap(new HashMap<Pointer, CustomerData>());
 
     static class WriteCallback extends Write_packet_Pointer_BytePointer_int {
+        private byte[] mediaBuf;
+
+        public WriteCallback() {
+            mediaBuf = new byte[4096 * 4];
+        }
+
         @Override
         public int call(Pointer opaque, BytePointer buf, int buf_size) {
             System.out.println("WriteCallback.call");
             log.info("WriteCallback.call {}", buf_size);
             try {
-                byte[] b = new byte[buf_size];
-                buf.get(b, 0, buf_size);
+                buf.get(mediaBuf, 0, buf_size);
 
                 Session session = outputStreams.get(opaque).getSession();
                 if (session != null && buf_size > 0) {
                     try {
                         log.info("session write data {}", buf_size);
-                        session.getBasicRemote().sendBinary(ByteBuffer.wrap(b, 0, buf_size));
+                        session.getBasicRemote().sendBinary(ByteBuffer.wrap(mediaBuf, 0, buf_size));
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -406,11 +403,9 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
 
             outputStreams.put(oc, CustomerData.builder()
                     .session(session)
-                    .fileName("")
                     .build());
 
             oc.oformat(oformat);
-            oc.filename().putString("");
             oc.max_delay(maxDelay);
 
         /* add the audio and video streams using the format codecs
@@ -844,7 +839,7 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
             }
             /* write the stream header, if any */
             if ((ret = avformat_write_header(oc.metadata(metadata), options)) < 0) {
-                String errorMsg = "avformat_write_header error() error " + ret + ": Could not write header to '"  + "'";
+                String errorMsg = "avformat_write_header error() error " + ret + ": Could not write header to '" + "'";
                 releaseUnsafe();
                 av_dict_free(options);
                 throw new Exception(errorMsg);
@@ -860,9 +855,12 @@ public class CommonFFmpegFrameRecorder extends FrameRecorder {
     public synchronized void flush() throws Exception {
         synchronized (oc) {
             /* flush all the buffers */
-            while (video_st != null && ifmt_ctx == null && recordImage(0, 0, 0, 0, 0, AV_PIX_FMT_NONE, (Buffer[]) null))
+            while (video_st != null && ifmt_ctx == null && recordImage(0, 0, 0, 0, 0, AV_PIX_FMT_NONE, (Buffer[]) null)) {
                 ;
-            while (audio_st != null && ifmt_ctx == null && recordSamples(0, 0, (Buffer[]) null)) ;
+            }
+            while (audio_st != null && ifmt_ctx == null && recordSamples(0, 0, (Buffer[]) null)) {
+                ;
+            }
 
             if (interleaved && (video_st != null || audio_st != null)) {
                 av_interleaved_write_frame(oc, null);

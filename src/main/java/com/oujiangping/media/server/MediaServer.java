@@ -1,7 +1,9 @@
 package com.oujiangping.media.server;
 
-import com.oujiangping.media.ffmpeg.CommonFFmpegFrameRecorder;
+import com.oujiangping.media.ffmpeg.WebsocketFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
+import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameGrabber;
@@ -14,7 +16,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.*;
-import java.nio.ByteBuffer;
+
+import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
 
 /**
  * @author oujiangping
@@ -25,8 +28,6 @@ import java.nio.ByteBuffer;
 @Slf4j
 @ServerEndpoint("/media/play.flv")
 public class MediaServer {
-    private static final int RECORD_LENGTH = 50000;
-
     private static final boolean AUDIO_ENABLED = true;
 
     @OnOpen
@@ -70,35 +71,30 @@ public class MediaServer {
     }
 
     public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
-
         String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
-
-        // Decodes-encodes
-        String outputFile = "test_00.flv";
         log.info("record");
-        frameRecord(session, inputFile, outputFile);
+        frameRecord(session, inputFile);
 
     }
 
-    public static void frameRecord(Session session, String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
+    public static void frameRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
+        avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.start();
 
-        CommonFFmpegFrameRecorder recorder = new CommonFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
         recorder.setVideoBitrate(grabber.getVideoBitrate());
         recorder.setInterleaved(true);
-        recorder.start();
 
+
+        recorder.start();
         Frame frame;
-        long t1 = System.currentTimeMillis();
         while ((frame = grabber.grabFrame(AUDIO_ENABLED, true, true, false)) != null) {
             recorder.record(frame);
-            if ((System.currentTimeMillis() - t1) > RECORD_LENGTH) {
-                break;
-            }
         }
+
         recorder.stop();
         grabber.stop();
     }
