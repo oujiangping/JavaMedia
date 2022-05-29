@@ -65,6 +65,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacpp.BytePointer;
 import org.bytedeco.javacpp.DoublePointer;
 import org.bytedeco.javacpp.FloatPointer;
@@ -95,6 +97,7 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
  *
  * @author Samuel Audet
  */
+@Slf4j
 public class PacketFFmpegFrameRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
 
@@ -498,8 +501,9 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
                     }
 
                 } else if (inputStream.codecpar().codec_type() == AVMEDIA_TYPE_AUDIO) {
-                    inpAudioStream = inputStream;
-                    audioCodec = inpAudioStream.codecpar().codec_id();
+                    //audio do not copy
+                    //inpAudioStream = inputStream;
+                    //audioCodec = inpAudioStream.codecpar().codec_id();
                 }
             }
         }
@@ -557,6 +561,7 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
                 aspectRatio = inpVideoStream.codecpar().sample_aspect_ratio().num()*1.0d/ inpVideoStream.codecpar().sample_aspect_ratio().den();
 //                videoQuality = inpVideoStream.codecpar().global_quality();
                 video_c.codec_tag(0);
+                video_st.codecpar().codec_tag(0);
             }
 
             video_c.codec_id(video_codec.id());
@@ -762,7 +767,7 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
 
         /* now that all the parameters are set, we can open the audio and
            video codecs and allocate the necessary encode buffers */
-        if (video_st != null && inpVideoStream == null) {
+        if (true) {
             AVDictionary options = new AVDictionary(null);
             if (videoQuality >= 0) {
                 av_dict_set(options, "crf", "" + videoQuality, 0);
@@ -1024,6 +1029,7 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
                 step = width;
             }
 
+            log.info("fuck {} {}", video_c.pix_fmt(), pixelFormat);
             if (video_c.pix_fmt() != pixelFormat || video_c.width() != width || video_c.height() != height) {
                 /* convert to the codec pixel format if needed */
                 img_convert_ctx = sws_getCachedContext(img_convert_ctx, width, height, pixelFormat,
@@ -1047,7 +1053,7 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
             } else {
                 av_image_fill_arrays(new PointerPointer(picture), picture.linesize(), data, pixelFormat, width, height, 1);
                 picture.linesize(0, step);
-                picture.format(pixelFormat);
+                picture.format(0);
                 picture.width(width);
                 picture.height(height);
             }
@@ -1339,7 +1345,8 @@ public class PacketFFmpegFrameRecorder extends FrameRecorder {
             if (interleaved && avStream != null) {
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
                     av_packet_unref(avPacket);
-                    throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
+                    return;
+                    //throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
                 }
             } else {
                 if ((ret = av_write_frame(oc, avPacket)) < 0) {

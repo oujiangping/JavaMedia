@@ -9,23 +9,24 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H263;
+import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
+
 /**
  * 功能描述：<>
  *
  * @author oujiangping
  * @create 2022/5/27 18:17
  */
+@Slf4j
 public class FFmpegFrameRecorderTest {
-    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd__hhmmSSS");
-
-    private static final int RECORD_LENGTH = 5000;
-
     private static final boolean AUDIO_ENABLED = true;
 
     public static void main(String[] args) throws FrameGrabber.Exception, FrameRecorder.Exception {
-        String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
-        packetRecord(inputFile, "test.ts");
-        //frameRecord(inputFile, "test.flv");
+        //String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
+        String inputFile = "http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8";
+        //packetRecord(inputFile, "test.flv");
+        frameRecord(inputFile, "test.flv");
     }
 
     public static void packetRecord(String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
@@ -36,16 +37,13 @@ public class FFmpegFrameRecorderTest {
 
         grabber.start();
 
-        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
+        PacketFFmpegFrameRecorder recorder = new PacketFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
         recorder.start(grabber.getFormatContext());
 
         AVPacket packet;
         long t1 = System.currentTimeMillis();
         while ((packet = grabber.grabPacket()) != null) {
             recorder.recordPacket(packet);
-            if ((System.currentTimeMillis() - t1) > RECORD_LENGTH) {
-                break;
-            }
         }
 
         recorder.stop();
@@ -58,19 +56,16 @@ public class FFmpegFrameRecorderTest {
         int audioChannel = AUDIO_ENABLED ? 1 : 0;
 
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-
+        grabber.setPixelFormat(0);
         grabber.start();
 
-        FFmpegFrameRecorder recorder = new FFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
-        recorder.start();
+        PacketFFmpegFrameRecorder recorder = new PacketFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
+        grabber.setPixelFormat(grabber.getPixelFormat());
+        recorder.start(grabber.getFormatContext());
 
         Frame frame;
-        long t1 = System.currentTimeMillis();
         while ((frame = grabber.grabFrame(AUDIO_ENABLED, true, true, false)) != null) {
             recorder.record(frame);
-            if ((System.currentTimeMillis() - t1) > RECORD_LENGTH) {
-                break;
-            }
         }
         recorder.stop();
         grabber.stop();
