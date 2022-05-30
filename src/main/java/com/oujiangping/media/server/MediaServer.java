@@ -18,6 +18,7 @@ import javax.websocket.server.ServerEndpoint;
 import java.io.*;
 
 import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
+import static org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P;
 
 /**
  * @author oujiangping
@@ -80,11 +81,13 @@ public class MediaServer {
     public static void frameRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
+        grabber.setPixelFormat(AV_PIX_FMT_YUV420P);
         grabber.start();
 
         WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
+        recorder.setPixelFormat(grabber.getPixelFormat());
         recorder.setVideoBitrate(grabber.getVideoBitrate());
         recorder.setInterleaved(true);
 
@@ -101,10 +104,8 @@ public class MediaServer {
 
     public static void packetRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        grabber.setPixelFormat(0);
         grabber.start();
         WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
-        recorder.setPixelFormat(grabber.getPixelFormat());
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
         AVPacket packet;

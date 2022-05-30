@@ -253,15 +253,12 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
 
         @Override
         public int call(Pointer opaque, BytePointer buf, int buf_size) {
-            System.out.println("WriteCallback.call");
-            log.info("WriteCallback.call {}", buf_size);
             try {
                 buf.get(mediaBuf, 0, buf_size);
 
                 Session session = outputStreams.get(opaque).getSession();
                 if (session != null && buf_size > 0) {
                     try {
-                        log.info("session write data {}", buf_size);
                         session.getBasicRemote().sendBinary(ByteBuffer.wrap(mediaBuf, 0, buf_size));
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -471,9 +468,9 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                 }
 
                 if (inpVideoStream != null) {
-                    if ((ret = avcodec_copy_context(video_st.codec(), inpVideoStream.codec())) < 0) {
+                    if ((ret = avcodec_parameters_copy(video_st.codecpar(), inpVideoStream.codecpar())) < 0) {
                         releaseUnsafe();
-                        throw new Exception("avcodec_copy_context() error:\tFailed to copy context from input to output stream codec context");
+                        throw new Exception("avcodec_parameters_copy() error " + ret + ": Failed to copy video stream codec parameters from input to output");
                     }
 
                     videoBitrate = (int) inpVideoStream.codec().bit_rate();
@@ -1258,7 +1255,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
             int ret;
             if (interleaved && avStream != null) {
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
-                    throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
+                    //throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
                 }
             } else {
                 if ((ret = av_write_frame(oc, avPacket)) < 0) {
