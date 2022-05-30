@@ -74,16 +74,18 @@ public class MediaServer {
     public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
         log.info("record");
-        //frameRecord(session, inputFile);
-        packetRecord(session, inputFile);
-    }
-
-    public static void frameRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.setPixelFormat(AV_PIX_FMT_YUV420P);
         grabber.start();
+        if(grabber.getVideoCodec() == AV_CODEC_ID_H264) {
+            packetRecord(session, grabber);
+        } else {
+            frameRecord(session, grabber);
+        }
+    }
 
+    public static void frameRecord(Session session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
@@ -102,9 +104,7 @@ public class MediaServer {
         grabber.stop();
     }
 
-    public static void packetRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
-        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        grabber.start();
+    public static void packetRecord(Session session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
         WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
