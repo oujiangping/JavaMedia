@@ -73,8 +73,8 @@ public class MediaServer {
     public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
         log.info("record");
-        frameRecord(session, inputFile);
-
+        //frameRecord(session, inputFile);
+        packetRecord(session, inputFile);
     }
 
     public static void frameRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
@@ -97,5 +97,22 @@ public class MediaServer {
 
         recorder.stop();
         grabber.stop();
+    }
+
+    public static void packetRecord(Session session, String inputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
+        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
+        grabber.setPixelFormat(0);
+        grabber.start();
+        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setPixelFormat(grabber.getPixelFormat());
+        recorder.setFormat("flv");
+        recorder.start(grabber.getFormatContext());
+        AVPacket packet;
+        while ((packet = grabber.grabPacket()) != null) {
+            recorder.recordPacket(packet);
+        }
+        recorder.stop();
+        grabber.stop();
+
     }
 }

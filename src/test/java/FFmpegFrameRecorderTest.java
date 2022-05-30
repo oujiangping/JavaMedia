@@ -1,4 +1,5 @@
 import com.oujiangping.media.MediaApplication;
+import com.oujiangping.media.ffmpeg.WebsocketFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.*;
@@ -25,8 +26,8 @@ public class FFmpegFrameRecorderTest {
     public static void main(String[] args) throws FrameGrabber.Exception, FrameRecorder.Exception {
         //String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
         String inputFile = "http://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear2/prog_index.m3u8";
-        //packetRecord(inputFile, "test.flv");
-        frameRecord(inputFile, "test.flv");
+        packetRecord(inputFile, "test.flv");
+        //frameRecord(inputFile, "test.flv");
     }
 
     public static void packetRecord(String inputFile, String outputFile) throws FrameGrabber.Exception, FrameRecorder.Exception {
@@ -37,7 +38,9 @@ public class FFmpegFrameRecorderTest {
 
         grabber.start();
 
-        PacketFFmpegFrameRecorder recorder = new PacketFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
+        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setFormat("flv");
+        recorder.setPixelFormat(grabber.getPixelFormat());
         recorder.start(grabber.getFormatContext());
 
         AVPacket packet;
@@ -59,7 +62,7 @@ public class FFmpegFrameRecorderTest {
         grabber.setPixelFormat(0);
         grabber.start();
 
-        PacketFFmpegFrameRecorder recorder = new PacketFFmpegFrameRecorder(outputFile, grabber.getImageWidth(), grabber.getImageHeight(), audioChannel);
+        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         grabber.setPixelFormat(grabber.getPixelFormat());
         recorder.start(grabber.getFormatContext());
 

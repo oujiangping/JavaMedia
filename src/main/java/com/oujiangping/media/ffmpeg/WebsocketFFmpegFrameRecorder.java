@@ -397,7 +397,6 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                 throw new Exception("avformat_alloc_context2() error:\tCould not allocate format context");
             }
 
-            oc.flags(0x0080 | oc.flags());
             avio = avio_alloc_context(new BytePointer(av_malloc(4096)), 4096, 1, oc, null, writeCallback, seekCallback);
             oc.pb(avio);
 
@@ -430,17 +429,20 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
             }
 
             if (imageWidth > 0 && imageHeight > 0) {
-                if (videoCodec != AV_CODEC_ID_NONE) {
-                    oformat.video_codec(videoCodec);
-                } else if ("flv".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_H264);
-                } else if ("mp4".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_MPEG4);
-                } else if ("3gp".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_H263);
-                } else if ("avi".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_H264);
+                if (videoCodec == AV_CODEC_ID_NONE) {
+                    videoCodec = oformat.video_codec();
                 }
+//                if (videoCodec != AV_CODEC_ID_NONE) {
+//                    oformat.video_codec(videoCodec);
+//                } else if ("flv".equals(format_name)) {
+//                    oformat.video_codec(AV_CODEC_ID_H264);
+//                } else if ("mp4".equals(format_name)) {
+//                    oformat.video_codec(AV_CODEC_ID_MPEG4);
+//                } else if ("3gp".equals(format_name)) {
+//                    oformat.video_codec(AV_CODEC_ID_H263);
+//                } else if ("avi".equals(format_name)) {
+//                    oformat.video_codec(AV_CODEC_ID_H264);
+//                }
 
                 /* find the video encoder */
                 if ((video_codec = avcodec_find_encoder_by_name(videoCodecName)) == null &&
@@ -475,10 +477,10 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                     }
 
                     videoBitrate = (int) inpVideoStream.codec().bit_rate();
-                    pixelFormat = inpVideoStream.codec().pix_fmt();
-                    aspectRatio = inpVideoStream.codec().sample_aspect_ratio().num() * 1.0d / inpVideoStream.codec().sample_aspect_ratio().den();
-                    videoQuality = inpVideoStream.codec().global_quality();
+                    pixelFormat = inpVideoStream.codecpar().format();
+                    aspectRatio = inpVideoStream.codecpar().sample_aspect_ratio().num()*1.0d/ inpVideoStream.codecpar().sample_aspect_ratio().den();                    videoQuality = inpVideoStream.codec().global_quality();
                     video_c.codec_tag(0);
+                    video_st.codecpar().codec_tag(0);
                 }
 
                 video_c.codec_id(oformat.video_codec());
@@ -623,6 +625,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                     audio_st.duration(inpAudioStream.duration());
                     audio_st.time_base().num(inpAudioStream.time_base().num());
                     audio_st.time_base().den(inpAudioStream.time_base().den());
+                    audio_st.codecpar().codec_tag(0);
                 }
 
                 audio_c.codec_id(oformat.audio_codec());
@@ -757,7 +760,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                 video_st.metadata(metadata);
             }
 
-            if (audio_st != null && inpAudioStream == null) {
+            if (audio_st != null) {
                 AVDictionary options = new AVDictionary(null);
                 if (audioQuality >= 0) {
                     av_dict_set(options, "crf", "" + audioQuality, 0);
