@@ -16,6 +16,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.*;
+import java.util.List;
+import java.util.Map;
 
 import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
 import static org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P;
@@ -32,23 +34,35 @@ public class MediaServer {
     private static final boolean AUDIO_ENABLED = true;
 
     @OnOpen
-    public void onOpen(Session session) {
+    public void onOpen(Session session) throws IOException {
+        Map<String, List<String>> paramMap = session.getRequestParameterMap();
+        String url = null;
+        if(paramMap != null && paramMap.get("url").size() > 0) {
+            url = paramMap.get("url").get(0);
+        } else {
+            log.error("url can't be null null");
+            session.close();
+            return;
+        }
         log.info("onOpen");
-        Thread mediaThread = new Thread(new MediaRunnable(session));
+        Thread mediaThread = new Thread(new MediaRunnable(session, url));
         mediaThread.start();
     }
 
     public class MediaRunnable implements Runnable {
         private Session session;
 
-        public MediaRunnable(Session session) {
+        private String url;
+
+        public MediaRunnable(Session session, String url) {
             this.session = session;
+            this.url = url;
         }
 
         @Override
         public void run() {
             try {
-                record(session);
+                record(session, url);
             } catch (IOException ex) {
                 ex.printStackTrace();
             } finally {
@@ -71,8 +85,8 @@ public class MediaServer {
 
     }
 
-    public void  record(Session session) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
-        String inputFile = "http://39.134.66.66/PLTV/88888888/224/3221225668/index.m3u8";
+    public void  record(Session session, String url) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
+        String inputFile = url;
         log.info("record");
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
