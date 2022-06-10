@@ -35,6 +35,7 @@ public class MediaRecord {
         } else {
             frameRecord(session, grabber);
         }
+        grabber.stop();
     }
 
     public static void frameRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
@@ -48,12 +49,14 @@ public class MediaRecord {
 
         recorder.start();
         Frame frame;
-        while ((frame = grabber.grabFrame(AUDIO_ENABLED, true, true, false)) != null) {
-            recorder.record(frame);
+        try {
+            while ((frame = grabber.grabFrame(AUDIO_ENABLED, true, true, false)) != null) {
+                recorder.record(frame);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
         recorder.stop();
-        grabber.stop();
     }
 
     public static void packetRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
@@ -61,11 +64,13 @@ public class MediaRecord {
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
         AVPacket packet;
-        while ((packet = grabber.grabPacket()) != null) {
-            recorder.recordPacket(packet);
+        try {
+            while ((packet = grabber.grabPacket()) != null) {
+                recorder.recordPacket(packet);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         recorder.stop();
-        grabber.stop();
-
     }
 }
