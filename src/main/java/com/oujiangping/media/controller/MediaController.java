@@ -22,12 +22,13 @@ import java.net.URLEncoder;
 @RestController
 public class MediaController {
     @RequestMapping("play.flv")
-    public void flv(@RequestParam("url") String url, HttpServletResponse response) {
+    public void flv(@RequestParam("url") String url,HttpServletResponse response) {
         try {
             response.reset();
             OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
             response.setContentType("video/x-flv");
             response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Transfer-Encoding", "chunked");
 
             MediaRecord.record(new OutputStreamPacketWriter(outputStream), url);
         } catch (IOException ex) {
