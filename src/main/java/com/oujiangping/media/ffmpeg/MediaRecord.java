@@ -38,7 +38,7 @@ public class MediaRecord {
     }
 
     public static void frameRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
-        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
         recorder.setPixelFormat(grabber.getPixelFormat());
@@ -57,7 +57,7 @@ public class MediaRecord {
     }
 
     public static void packetRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
-        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
         AVPacket packet;

@@ -3,14 +3,7 @@ package com.oujiangping.media.server;
 import com.oujiangping.media.ffmpeg.MediaRecord;
 import com.oujiangping.media.ffmpeg.PacketWriter;
 import com.oujiangping.media.ffmpeg.SessionPacketWriter;
-import com.oujiangping.media.ffmpeg.WebsocketFFmpegFrameRecorder;
 import lombok.extern.slf4j.Slf4j;
-import org.bytedeco.ffmpeg.avcodec.AVPacket;
-import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.FrameRecorder;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -21,9 +14,6 @@ import javax.websocket.server.ServerEndpoint;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
-
-import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
-import static org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P;
 
 /**
  * @author oujiangping

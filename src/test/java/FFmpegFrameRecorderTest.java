@@ -1,17 +1,7 @@
-import com.oujiangping.media.MediaApplication;
-import com.oujiangping.media.ffmpeg.WebsocketFFmpegFrameRecorder;
+import com.oujiangping.media.ffmpeg.FFmpegMediaRecorder;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.javacv.*;
-import org.junit.runner.RunWith;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
-import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H263;
-import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
 
 /**
  * 功能描述：<>
@@ -38,7 +28,7 @@ public class FFmpegFrameRecorderTest {
 
         grabber.start();
 
-        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setPixelFormat(grabber.getPixelFormat());
         recorder.start(grabber.getFormatContext());
@@ -62,7 +52,7 @@ public class FFmpegFrameRecorderTest {
         grabber.setPixelFormat(0);
         grabber.start();
 
-        WebsocketFFmpegFrameRecorder recorder = new WebsocketFFmpegFrameRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(null, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         grabber.setPixelFormat(grabber.getPixelFormat());
         recorder.start(grabber.getFormatContext());
 

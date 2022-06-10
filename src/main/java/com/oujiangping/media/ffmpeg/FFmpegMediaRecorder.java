@@ -38,7 +38,7 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
  * @author Samuel Audet
  */
 @Slf4j
-public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
+public class FFmpegMediaRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
 
     private PacketWriter packetWriter;
@@ -78,7 +78,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
                 if (t instanceof Exception) {
                     throw loadingException = (Exception) t;
                 } else {
-                    throw loadingException = new Exception("Failed to load " + WebsocketFFmpegFrameRecorder.class, t);
+                    throw loadingException = new Exception("Failed to load " + FFmpegMediaRecorder.class, t);
                 }
             }
         }
@@ -93,7 +93,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
     }
 
 
-    public WebsocketFFmpegFrameRecorder(int imageWidth, int imageHeight, int audioChannels) {
+    public FFmpegMediaRecorder(int imageWidth, int imageHeight, int audioChannels) {
         this.imageWidth = imageWidth;
         this.imageHeight = imageHeight;
         this.audioChannels = audioChannels;
@@ -111,7 +111,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public WebsocketFFmpegFrameRecorder(PacketWriter packetWriter, int imageWidth, int imageHeight, int audioChannels) {
+    public FFmpegMediaRecorder(PacketWriter packetWriter, int imageWidth, int imageHeight, int audioChannels) {
         this(imageWidth, imageHeight, audioChannels);
         this.packetWriter = packetWriter;
     }
