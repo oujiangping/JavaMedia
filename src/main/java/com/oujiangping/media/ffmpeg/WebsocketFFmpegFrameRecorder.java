@@ -19,7 +19,6 @@ import org.bytedeco.javacv.FFmpegLockCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
 
-import javax.websocket.Session;
 import java.io.IOException;
 import java.nio.*;
 import java.nio.charset.Charset;
@@ -42,7 +41,7 @@ import static org.bytedeco.ffmpeg.global.swscale.*;
 public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
     protected Charset charset = Charset.defaultCharset();
 
-    private Session session;
+    private PacketWriter packetWriter;
 
     public static class Exception extends FrameRecorder.Exception {
         public Exception(String message) {
@@ -112,9 +111,9 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
         this.interleaved = true;
     }
 
-    public WebsocketFFmpegFrameRecorder(Session session, int imageWidth, int imageHeight, int audioChannels) {
+    public WebsocketFFmpegFrameRecorder(PacketWriter packetWriter, int imageWidth, int imageHeight, int audioChannels) {
         this(imageWidth, imageHeight, audioChannels);
-        this.session = session;
+        this.packetWriter = packetWriter;
     }
 
     @Data
@@ -125,7 +124,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
         /**
          * websect的session
          */
-        private Session session;
+        private PacketWriter packetWriter;
     }
 
     @Override
@@ -256,10 +255,10 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
             try {
                 buf.get(mediaBuf, 0, buf_size);
 
-                Session session = outputStreams.get(opaque).getSession();
-                if (session != null && buf_size > 0) {
+                PacketWriter packetWriter = outputStreams.get(opaque).getPacketWriter();
+                if (packetWriter != null && buf_size > 0) {
                     try {
-                        session.getBasicRemote().sendBinary(ByteBuffer.wrap(mediaBuf, 0, buf_size));
+                        packetWriter.write(mediaBuf, buf_size);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -398,7 +397,7 @@ public class WebsocketFFmpegFrameRecorder extends FrameRecorder {
             oc.pb(avio);
 
             outputStreams.put(oc, CustomerData.builder()
-                    .session(session)
+                    .packetWriter(packetWriter)
                     .build());
 
             oc.oformat(oformat);
