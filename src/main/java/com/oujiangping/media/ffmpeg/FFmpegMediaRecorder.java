@@ -257,11 +257,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
 
                 PacketWriter packetWriter = outputStreams.get(opaque).getPacketWriter();
                 if (packetWriter != null && buf_size > 0) {
-                    try {
-                        packetWriter.write(mediaBuf, buf_size);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    packetWriter.write(mediaBuf, buf_size);
                 }
 
                 return buf_size;
