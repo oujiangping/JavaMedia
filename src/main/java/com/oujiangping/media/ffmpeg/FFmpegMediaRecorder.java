@@ -424,17 +424,17 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                 if (videoCodec == AV_CODEC_ID_NONE) {
                     videoCodec = oformat.video_codec();
                 }
-//                if (videoCodec != AV_CODEC_ID_NONE) {
-//                    oformat.video_codec(videoCodec);
-//                } else if ("flv".equals(format_name)) {
-//                    oformat.video_codec(AV_CODEC_ID_H264);
-//                } else if ("mp4".equals(format_name)) {
-//                    oformat.video_codec(AV_CODEC_ID_MPEG4);
-//                } else if ("3gp".equals(format_name)) {
-//                    oformat.video_codec(AV_CODEC_ID_H263);
-//                } else if ("avi".equals(format_name)) {
-//                    oformat.video_codec(AV_CODEC_ID_H264);
-//                }
+                if (videoCodec != AV_CODEC_ID_NONE) {
+                    oformat.video_codec(videoCodec);
+                } else if ("flv".equals(format_name)) {
+                    oformat.video_codec(AV_CODEC_ID_H264);
+                } else if ("mp4".equals(format_name)) {
+                    oformat.video_codec(AV_CODEC_ID_MPEG4);
+                } else if ("3gp".equals(format_name)) {
+                    oformat.video_codec(AV_CODEC_ID_H263);
+                } else if ("avi".equals(format_name)) {
+                    oformat.video_codec(AV_CODEC_ID_H264);
+                }
 
                 /* find the video encoder */
                 if ((video_codec = avcodec_find_encoder_by_name(videoCodecName)) == null &&
@@ -1249,11 +1249,17 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         synchronized (oc) {
             int ret;
             if (interleaved && avStream != null) {
+                if(avPacket.pts() < avPacket.dts()) {
+                    av_packet_unref(avPacket);
+                    return;
+                }
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
+                    av_packet_unref(avPacket);
                     throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
                 }
             } else {
                 if ((ret = av_write_frame(oc, avPacket)) < 0) {
+                    av_packet_unref(avPacket);
                     throw new Exception("av_write_frame() error " + ret + " while writing " + mediaTypeStr + " packet.");
                 }
             }

@@ -3,10 +3,7 @@ package com.oujiangping.media.ffmpeg;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
 import org.bytedeco.ffmpeg.global.avutil;
-import org.bytedeco.javacv.FFmpegFrameGrabber;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.FrameGrabber;
-import org.bytedeco.javacv.FrameRecorder;
+import org.bytedeco.javacv.*;
 
 import java.io.FileNotFoundException;
 
@@ -24,14 +21,14 @@ public class MediaRecord {
     private static final boolean AUDIO_ENABLED = true;
 
     public static void record(PacketWriter session, String url) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
+        FFmpegLogCallback.set();
         String inputFile = url;
         log.info("record");
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
-        grabber.setPixelFormat(AV_PIX_FMT_YUV420P);
         grabber.start();
         if(grabber.getVideoCodec() == AV_CODEC_ID_H264) {
-            packetRecord(session, grabber);
+            frameRecord(session, grabber);
         } else {
             frameRecord(session, grabber);
         }
@@ -42,7 +39,7 @@ public class MediaRecord {
         FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
-        recorder.setPixelFormat(grabber.getPixelFormat());
+        //recorder.setPixelFormat(grabber.getPixelFormat());
         recorder.setVideoBitrate(grabber.getVideoBitrate());
         recorder.setInterleaved(true);
 
@@ -66,7 +63,11 @@ public class MediaRecord {
         AVPacket packet;
         try {
             while ((packet = grabber.grabPacket()) != null) {
-                recorder.recordPacket(packet);
+                try {
+                    recorder.recordPacket(packet);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
