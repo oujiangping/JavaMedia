@@ -1,14 +1,16 @@
 package com.oujiangping.media.ffmpeg;
 
 import lombok.extern.slf4j.Slf4j;
+import org.bytedeco.ffmpeg.avcodec.AVCodec;
+import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
+import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
 
 import java.io.FileNotFoundException;
 
 import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
-import static org.bytedeco.ffmpeg.global.avutil.AV_PIX_FMT_YUV420P;
 
 /**
  * 功能描述：<>
@@ -28,7 +30,8 @@ public class MediaRecord {
         FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
         grabber.start();
         if(grabber.getVideoCodec() == AV_CODEC_ID_H264) {
-            frameRecord(session, grabber);
+            packetRecord(session, grabber);
+            //frameRecord(session, grabber);
         } else {
             frameRecord(session, grabber);
         }
@@ -63,11 +66,7 @@ public class MediaRecord {
         AVPacket packet;
         try {
             while ((packet = grabber.grabPacket()) != null) {
-                try {
-                    recorder.recordPacket(packet);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                recorder.recordPacket(packet);
             }
         } catch (Exception e) {
             e.printStackTrace();

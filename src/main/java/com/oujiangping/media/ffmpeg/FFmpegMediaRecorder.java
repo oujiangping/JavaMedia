@@ -12,9 +12,11 @@ import org.bytedeco.ffmpeg.avformat.*;
 import org.bytedeco.ffmpeg.avutil.AVDictionary;
 import org.bytedeco.ffmpeg.avutil.AVFrame;
 import org.bytedeco.ffmpeg.avutil.AVRational;
+import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.swresample.SwrContext;
 import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
+import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.bytedeco.javacv.FFmpegLockCallback;
 import org.bytedeco.javacv.Frame;
 import org.bytedeco.javacv.FrameRecorder;
@@ -421,9 +423,9 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             }
 
             if (imageWidth > 0 && imageHeight > 0) {
-                if (videoCodec == AV_CODEC_ID_NONE) {
-                    videoCodec = oformat.video_codec();
-                }
+//                if (videoCodec == AV_CODEC_ID_NONE) {
+//                    videoCodec = oformat.video_codec();
+//                }
                 if (videoCodec != AV_CODEC_ID_NONE) {
                     oformat.video_codec(videoCodec);
                 } else if ("flv".equals(format_name)) {
@@ -470,7 +472,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
 
                     videoBitrate = (int) inpVideoStream.codec().bit_rate();
                     pixelFormat = inpVideoStream.codecpar().format();
-                    aspectRatio = inpVideoStream.codecpar().sample_aspect_ratio().num()*1.0d/ inpVideoStream.codecpar().sample_aspect_ratio().den();                    videoQuality = inpVideoStream.codec().global_quality();
+                    aspectRatio = inpVideoStream.codecpar().sample_aspect_ratio().num() * 1.0d / inpVideoStream.codecpar().sample_aspect_ratio().den();
+                    videoQuality = inpVideoStream.codec().global_quality();
                     video_c.codec_tag(0);
                     video_st.codecpar().codec_tag(0);
                 }
@@ -1249,7 +1252,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         synchronized (oc) {
             int ret;
             if (interleaved && avStream != null) {
-                if(avPacket.pts() < avPacket.dts()) {
+                if (avPacket.pts() < avPacket.dts()) {
                     av_packet_unref(avPacket);
                     return;
                 }
@@ -1292,8 +1295,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         if (in_stream.codecpar().codec_type() == AVMEDIA_TYPE_VIDEO && video_st != null) {
             pkt.stream_index(video_st.index());
             pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), video_st.time_base()));
-            pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), video_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
-            pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), video_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
+            pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), video_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
+            pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), video_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
             writePacket(AVMEDIA_TYPE_VIDEO, pkt);
         } else if (in_stream.codecpar().codec_type() == AVMEDIA_TYPE_AUDIO && audio_st != null && (audioChannels > 0)) {
             pkt.stream_index(audio_st.index());
