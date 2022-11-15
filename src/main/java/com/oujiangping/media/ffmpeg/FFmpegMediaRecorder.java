@@ -45,6 +45,10 @@ public class FFmpegMediaRecorder extends FrameRecorder {
 
     private MyFFmpegFrameGrabber grabber;
 
+    private long lastPts;
+
+    private long lastDts;
+
     public static class Exception extends FrameRecorder.Exception {
         public Exception(String message) {
             super(message + " (For more details, make sure FFmpegLogCallback.set() has been called.)");
@@ -111,6 +115,9 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         this.sampleRate = 44100;
 
         this.interleaved = true;
+
+        lastDts = Long.MIN_VALUE;
+        lastPts = Long.MIN_VALUE;
     }
 
     public FFmpegMediaRecorder(PacketWriter packetWriter, int imageWidth, int imageHeight, int audioChannels) {
@@ -416,8 +423,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                         }
 
                     } else if (inputStream.codec().codec_type() == AVMEDIA_TYPE_AUDIO) {
-                        inpAudioStream = inputStream;
-                        audioCodec = inpAudioStream.codec().codec_id();
+//                        inpAudioStream = inputStream;
+//                        audioCodec = inpAudioStream.codec().codec_id();
                     }
                 }
             }
@@ -580,7 +587,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                 if (audioCodec != AV_CODEC_ID_NONE) {
                     oformat.audio_codec(audioCodec);
                 } else if ("flv".equals(format_name) || "mp4".equals(format_name) || "3gp".equals(format_name)) {
-                    oformat.audio_codec(AV_CODEC_ID_AAC);
+                    oformat.audio_codec(AV_CODEC_ID_MP3);
                 } else if ("avi".equals(format_name)) {
                     oformat.audio_codec(AV_CODEC_ID_PCM_S16LE);
                 }
@@ -1252,10 +1259,6 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         synchronized (oc) {
             int ret;
             if (interleaved && avStream != null) {
-                if (avPacket.pts() < avPacket.dts()) {
-                    av_packet_unref(avPacket);
-                    return;
-                }
                 if ((ret = av_interleaved_write_frame(oc, avPacket)) < 0) {
                     av_packet_unref(avPacket);
                     throw new Exception("av_interleaved_write_frame() error " + ret + " while writing interleaved " + mediaTypeStr + " packet.");
@@ -1299,6 +1302,13 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             if (pkt.stream_index() != grabber.getVideoStream()) {
                 return true;
             }
+            log.info("-------------- video pts dts {} {} {}", pkt.pts(), pkt.dts(), pkt.duration());
+            if(pkt.pts() > lastPts) {
+                lastPts = pkt.pts();
+            } else {
+                log.error("-------------- video pts dts {} {} {}", pkt.pts(), pkt.dts(), pkt.duration());
+                return true;
+            }
             pkt.stream_index(video_st.index());
             pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), video_st.time_base()));
             pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), video_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
@@ -1311,12 +1321,13 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             if (pkt.stream_index() != grabber.getAudioStream()) {
                 return true;
             }
+            log.info("-------------- audio pts dts {} {}", pkt.pts(), pkt.dts());
             pkt.stream_index(audio_st.index());
             /**
              * 音频格式是否支持flv
              */
             Boolean transCodeAudio = !(grabber.getAudioCodec() == AV_CODEC_ID_AAC
-                    || grabber.getVideoCodec() == AV_CODEC_ID_MP3);
+                    || grabber.getAudioCodec() == AV_CODEC_ID_MP3);
             if (!transCodeAudio) {
                 pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
                 pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation

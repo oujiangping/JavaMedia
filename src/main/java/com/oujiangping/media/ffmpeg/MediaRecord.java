@@ -8,6 +8,7 @@ import org.bytedeco.javacv.*;
 import java.io.FileNotFoundException;
 
 import static org.bytedeco.ffmpeg.global.avcodec.*;
+import static org.bytedeco.ffmpeg.global.avutil.*;
 
 /**
  * 功能描述：<>
@@ -25,6 +26,7 @@ public class MediaRecord {
         log.info("record");
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         MyFFmpegFrameGrabber grabber = new MyFFmpegFrameGrabber(inputFile);
+        grabber.setThirdOptionsParam("rtsp_transport", "tcp");
         grabber.start();
         /**
          * 这些视频格式flv支持 不转码了
@@ -65,6 +67,7 @@ public class MediaRecord {
 
     public static void packetRecord(PacketWriter session, MyFFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
         FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
+        recorder.setSampleFormat(AV_SAMPLE_FMT_S16);
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
         recorder.setGrabber(grabber);

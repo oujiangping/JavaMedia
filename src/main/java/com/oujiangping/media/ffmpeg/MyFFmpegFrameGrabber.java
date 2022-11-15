@@ -92,6 +92,8 @@ public class MyFFmpegFrameGrabber extends FrameGrabber {
     private Frame frame;
     private volatile boolean started;
 
+    private AVDictionary thirdOptions;
+
     public static String[] getDeviceDescriptions() throws Exception {
         tryLoad();
         throw new UnsupportedOperationException("Device enumeration not support by FFmpeg.");
@@ -144,6 +146,7 @@ public class MyFFmpegFrameGrabber extends FrameGrabber {
         this.filename = filename;
         this.pixelFormat = -1;
         this.sampleFormat = -1;
+        this.thirdOptions = new AVDictionary((Pointer)null);
     }
 
     public MyFFmpegFrameGrabber(InputStream inputStream) {
@@ -157,6 +160,7 @@ public class MyFFmpegFrameGrabber extends FrameGrabber {
         this.pixelFormat = -1;
         this.sampleFormat = -1;
         this.maximumSize = maximumSize;
+        this.thirdOptions = new AVDictionary((Pointer)null);
     }
 
     @Override
@@ -758,7 +762,7 @@ public class MyFFmpegFrameGrabber extends FrameGrabber {
                 throw new Exception("av_find_input_format() error: Could not find input format \"" + this.format + "\".");
             }
 
-            AVDictionary options = new AVDictionary((Pointer)null);
+            AVDictionary options = thirdOptions;
             if (this.frameRate > 0.0) {
                 AVRational r = avutil.av_d2q(this.frameRate, 1001000);
                 avutil.av_dict_set(options, "framerate", r.num() + "/" + r.den(), 0);
@@ -1536,6 +1540,10 @@ public class MyFFmpegFrameGrabber extends FrameGrabber {
                 return -1;
             }
         }
+    }
+
+    public void setThirdOptionsParam(String key, String value) {
+        avutil.av_dict_set(thirdOptions, key, value, 0);
     }
 
     public static class Exception extends FrameGrabber.Exception {
