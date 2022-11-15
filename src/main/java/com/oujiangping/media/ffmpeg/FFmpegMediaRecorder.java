@@ -1299,7 +1299,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             /**
              * 多轨道的时候只取一条
              */
-            if(pkt.stream_index() != grabber.getVideoStream()) {
+            if (pkt.stream_index() != grabber.getVideoStream()) {
                 return true;
             }
             pkt.stream_index(video_st.index());
@@ -1311,18 +1311,26 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             /**
              * 多轨道的时候只取一条
              */
-            if(pkt.stream_index() != grabber.getAudioStream()) {
+            if (pkt.stream_index() != grabber.getAudioStream()) {
                 return true;
             }
             pkt.stream_index(audio_st.index());
-//            pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
-//            pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
-//            pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
-//            writePacket(AVMEDIA_TYPE_AUDIO, pkt);
             /**
-             * flv存在音频不兼容的情况 强行进行转编码
+             * 音频格式是否支持flv
              */
-            writeAudioPacket(pkt);
+            Boolean transCodeAudio = !(grabber.getAudioCodec() == AV_CODEC_ID_AAC
+                    || grabber.getVideoCodec() == AV_CODEC_ID_MP3);
+            if (!transCodeAudio) {
+                pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
+                pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
+                pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), audio_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
+                writePacket(AVMEDIA_TYPE_AUDIO, pkt);
+            } else {
+                /**
+                 * flv存在音频不兼容的情况 强行进行转编码
+                 */
+                writeAndTranscodeAudioPacket(pkt);
+            }
         }
 
         return true;
@@ -1332,7 +1340,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         this.grabber = grabber;
     }
 
-    public void writeAudioPacket(AVPacket pkt) throws Exception {
+    public void writeAndTranscodeAudioPacket(AVPacket pkt) throws Exception {
         AVFrame samplesFrame = null;
         int[] gotFrame = new int[1];
         if ((samplesFrame = av_frame_alloc()) == null) {

@@ -7,7 +7,7 @@ import org.bytedeco.javacv.*;
 
 import java.io.FileNotFoundException;
 
-import static org.bytedeco.ffmpeg.global.avcodec.AV_CODEC_ID_H264;
+import static org.bytedeco.ffmpeg.global.avcodec.*;
 
 /**
  * 功能描述：<>
@@ -26,7 +26,14 @@ public class MediaRecord {
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
         MyFFmpegFrameGrabber grabber = new MyFFmpegFrameGrabber(inputFile);
         grabber.start();
-        if(grabber.getVideoCodec() == AV_CODEC_ID_H264) {
+        /**
+         * 这些视频格式flv支持 不转码了
+         */
+        if (grabber.getVideoCodec() == AV_CODEC_ID_H264
+                || grabber.getVideoCodec() == AV_CODEC_ID_FLV1
+                || grabber.getVideoCodec() == AV_CODEC_ID_VP6
+                || grabber.getVideoCodec() == AV_CODEC_ID_H263
+                || grabber.getVideoCodec() == AV_CODEC_ID_MPEG4) {
             packetRecord(session, grabber);
             //frameRecord(session, grabber);
         } else {
