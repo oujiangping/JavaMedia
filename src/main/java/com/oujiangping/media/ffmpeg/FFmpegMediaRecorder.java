@@ -18,6 +18,7 @@ import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
 import org.bytedeco.javacv.FFmpegLockCallback;
 import org.bytedeco.javacv.Frame;
+import org.bytedeco.javacv.FrameGrabber;
 import org.bytedeco.javacv.FrameRecorder;
 
 import java.nio.*;
@@ -436,7 +437,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                 if (videoCodec != AV_CODEC_ID_NONE) {
                     oformat.video_codec(videoCodec);
                 } else if ("flv".equals(format_name)) {
-                    oformat.video_codec(AV_CODEC_ID_H264);
+                    oformat.video_codec(AV_CODEC_ID_PCM_ALAW);
                 } else if ("mp4".equals(format_name)) {
                     oformat.video_codec(AV_CODEC_ID_MPEG4);
                 } else if ("3gp".equals(format_name)) {
@@ -1302,11 +1303,11 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             if (pkt.stream_index() != grabber.getVideoStream()) {
                 return true;
             }
-            log.info("-------------- video pts dts {} {} {}", pkt.pts(), pkt.dts(), pkt.duration());
-            if(pkt.pts() > lastPts) {
+            log.info("-------------- video pts dts {} {} {} {}", pkt.pts(), pkt.dts(), pkt.duration(), lastPts);
+            if (pkt.pts() >= lastPts) {
                 lastPts = pkt.pts();
             } else {
-                log.error("-------------- video pts dts {} {} {}", pkt.pts(), pkt.dts(), pkt.duration());
+                log.error("-------------- video pts dts {} {} {} {}", pkt.pts(), pkt.dts(), pkt.duration(), lastPts);
                 return true;
             }
             pkt.stream_index(video_st.index());
@@ -1323,22 +1324,11 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             }
             log.info("-------------- audio pts dts {} {}", pkt.pts(), pkt.dts());
             pkt.stream_index(audio_st.index());
+
             /**
-             * 音频格式是否支持flv
+             * flv存在音频不兼容的情况 强行进行转编码
              */
-            Boolean transCodeAudio = !(grabber.getAudioCodec() == AV_CODEC_ID_AAC
-                    || grabber.getAudioCodec() == AV_CODEC_ID_MP3);
-            if (!transCodeAudio) {
-                pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
-                pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
-                pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), audio_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
-                writePacket(AVMEDIA_TYPE_AUDIO, pkt);
-            } else {
-                /**
-                 * flv存在音频不兼容的情况 强行进行转编码
-                 */
-                writeAndTranscodeAudioPacket(pkt);
-            }
+            writeAndTranscodeAudioPacket(pkt);
         }
 
         return true;
@@ -1359,9 +1349,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         if (len <= 0) {
             log.error("avcodec_decode_audio4 error len {}", len);
         } else if (gotFrame[0] != 0) {
-            samplesFrame.pts(pkt.pts());
-            samplesFrame.pkt_dts(pkt.dts());
-            samplesFrame.pkt_duration(pkt.duration());
+            log.info("graber getSampleFormat ------ {}", grabber.getAudioC().sample_fmt());
             record(samplesFrame);
         } else {
             log.error("avcodec_decode_audio4 gotFrame error");
