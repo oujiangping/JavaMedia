@@ -13,6 +13,7 @@ import org.bytedeco.ffmpeg.avutil.AVDictionary;
 import org.bytedeco.ffmpeg.avutil.AVFrame;
 import org.bytedeco.ffmpeg.avutil.AVRational;
 import org.bytedeco.ffmpeg.global.avcodec;
+import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.ffmpeg.swresample.SwrContext;
 import org.bytedeco.ffmpeg.swscale.SwsContext;
 import org.bytedeco.javacpp.*;
@@ -1335,13 +1336,13 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         AVFrame samplesFrame = null;
         int[] gotFrame = new int[1];
         if ((samplesFrame = av_frame_alloc()) == null) {
+            av_packet_unref(pkt);
             throw new Exception("av_frame_alloc() error: Could not allocate audio frame.");
         }
         int len = avcodec_decode_audio4(grabber.getAudioC(), samplesFrame, gotFrame, pkt);
         if (len <= 0) {
             log.error("avcodec_decode_audio4 error len {}", len);
         } else if (gotFrame[0] != 0) {
-            log.info("avcodec_decode_audio4 ok len {}", len);
             samplesFrame.pts(pkt.pts());
             samplesFrame.pkt_dts(pkt.dts());
             samplesFrame.pkt_duration(pkt.duration());
@@ -1349,6 +1350,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         } else {
             log.error("avcodec_decode_audio4 gotFrame error");
         }
+        av_packet_unref(pkt);
+        avutil.av_frame_free(samplesFrame);
     }
 
 }
