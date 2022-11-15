@@ -45,6 +45,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
 
     private PacketWriter packetWriter;
 
+    private MyFFmpegFrameGrabber grabber;
+
     public static class Exception extends FrameRecorder.Exception {
         public Exception(String message) {
             super(message + " (For more details, make sure FFmpegLogCallback.set() has been called.)");
@@ -1293,20 +1295,60 @@ public class FFmpegMediaRecorder extends FrameRecorder {
 //        pkt.pts(AV_NOPTS_VALUE);
         pkt.pos(-1);
         if (in_stream.codecpar().codec_type() == AVMEDIA_TYPE_VIDEO && video_st != null) {
+            /**
+             * 多轨道的时候只取一条
+             */
+            if(pkt.stream_index() != grabber.getVideoStream()) {
+                return true;
+            }
             pkt.stream_index(video_st.index());
             pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), video_st.time_base()));
             pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), video_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
             pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), video_st.time_base(), (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
             writePacket(AVMEDIA_TYPE_VIDEO, pkt);
         } else if (in_stream.codecpar().codec_type() == AVMEDIA_TYPE_AUDIO && audio_st != null && (audioChannels > 0)) {
+            /**
+             * 多轨道的时候只取一条
+             */
+            if(pkt.stream_index() != grabber.getAudioStream()) {
+                return true;
+            }
             pkt.stream_index(audio_st.index());
-            pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
-            pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
-            pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
-            writePacket(AVMEDIA_TYPE_AUDIO, pkt);
+//            pkt.duration((int) av_rescale_q(pkt.duration(), in_stream.time_base(), audio_st.time_base()));
+//            pkt.pts(av_rescale_q_rnd(pkt.pts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase pts calculation
+//            pkt.dts(av_rescale_q_rnd(pkt.dts(), in_stream.time_base(), audio_st.time_base(),(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX)));//Increase dts calculation
+//            writePacket(AVMEDIA_TYPE_AUDIO, pkt);
+            /**
+             * flv存在音频不兼容的情况 强行进行转编码
+             */
+            writeAudioPacket(pkt);
         }
 
         return true;
+    }
+
+    public void setGrabber(MyFFmpegFrameGrabber grabber) {
+        this.grabber = grabber;
+    }
+
+    public void writeAudioPacket(AVPacket pkt) throws Exception {
+        AVFrame samplesFrame = null;
+        int[] gotFrame = new int[1];
+        if ((samplesFrame = av_frame_alloc()) == null) {
+            throw new Exception("av_frame_alloc() error: Could not allocate audio frame.");
+        }
+        int len = avcodec_decode_audio4(grabber.getAudioC(), samplesFrame, gotFrame, pkt);
+        if (len <= 0) {
+            log.error("avcodec_decode_audio4 error len {}", len);
+        } else if (gotFrame[0] != 0) {
+            log.info("avcodec_decode_audio4 ok len {}", len);
+            samplesFrame.pts(pkt.pts());
+            samplesFrame.pkt_dts(pkt.dts());
+            samplesFrame.pkt_duration(pkt.duration());
+            record(samplesFrame);
+        } else {
+            log.error("avcodec_decode_audio4 gotFrame error");
+        }
     }
 
 }

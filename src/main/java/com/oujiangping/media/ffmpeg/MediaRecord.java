@@ -1,10 +1,7 @@
 package com.oujiangping.media.ffmpeg;
 
 import lombok.extern.slf4j.Slf4j;
-import org.bytedeco.ffmpeg.avcodec.AVCodec;
-import org.bytedeco.ffmpeg.avcodec.AVCodecContext;
 import org.bytedeco.ffmpeg.avcodec.AVPacket;
-import org.bytedeco.ffmpeg.global.avcodec;
 import org.bytedeco.ffmpeg.global.avutil;
 import org.bytedeco.javacv.*;
 
@@ -27,7 +24,7 @@ public class MediaRecord {
         String inputFile = url;
         log.info("record");
         avutil.av_log_set_level(avutil.AV_LOG_DEBUG);
-        FFmpegFrameGrabber grabber = new FFmpegFrameGrabber(inputFile);
+        MyFFmpegFrameGrabber grabber = new MyFFmpegFrameGrabber(inputFile);
         grabber.start();
         if(grabber.getVideoCodec() == AV_CODEC_ID_H264) {
             packetRecord(session, grabber);
@@ -38,7 +35,7 @@ public class MediaRecord {
         grabber.stop();
     }
 
-    public static void frameRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
+    public static void frameRecord(PacketWriter session, MyFFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception, FileNotFoundException {
         FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.setFrameRate(grabber.getFrameRate());
@@ -59,10 +56,11 @@ public class MediaRecord {
         recorder.stop();
     }
 
-    public static void packetRecord(PacketWriter session, FFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
+    public static void packetRecord(PacketWriter session, MyFFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
         FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
         recorder.setFormat("flv");
         recorder.start(grabber.getFormatContext());
+        recorder.setGrabber(grabber);
         AVPacket packet;
         try {
             while ((packet = grabber.grabPacket()) != null) {
