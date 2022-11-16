@@ -438,6 +438,7 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                     oformat.video_codec(videoCodec);
                 } else if ("flv".equals(format_name)) {
                     oformat.video_codec(AV_CODEC_ID_PCM_ALAW);
+                    oformat.flags(oformat.flags() | AVFMT_TS_NONSTRICT);
                 } else if ("mp4".equals(format_name)) {
                     oformat.video_codec(AV_CODEC_ID_MPEG4);
                 } else if ("3gp".equals(format_name)) {
@@ -696,15 +697,20 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                 }
             }
 
+            AVDictionary options = new AVDictionary(null);
+            for (Entry<String, String> e : videoOptions.entrySet()) {
+                av_dict_set(options, e.getKey(), e.getValue(), 0);
+            }
+            for (Entry<String, String> e : audioOptions.entrySet()) {
+                av_dict_set(options, e.getKey(), e.getValue(), 0);
+            }
+
+
         /* now that all the parameters are set, we can open the audio and
            video codecs and allocate the necessary encode buffers */
             if (video_st != null && inpVideoStream == null) {
-                AVDictionary options = new AVDictionary(null);
                 if (videoQuality >= 0) {
                     av_dict_set(options, "crf", "" + videoQuality, 0);
-                }
-                for (Entry<String, String> e : videoOptions.entrySet()) {
-                    av_dict_set(options, e.getKey(), e.getValue(), 0);
                 }
 
                 // Enable multithreading when available
@@ -764,12 +770,8 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             }
 
             if (audio_st != null) {
-                AVDictionary options = new AVDictionary(null);
                 if (audioQuality >= 0) {
                     av_dict_set(options, "crf", "" + audioQuality, 0);
-                }
-                for (Entry<String, String> e : audioOptions.entrySet()) {
-                    av_dict_set(options, e.getKey(), e.getValue(), 0);
                 }
 
                 // Enable multithreading when available
@@ -834,7 +836,6 @@ public class FFmpegMediaRecorder extends FrameRecorder {
                 audio_st.metadata(metadata);
             }
 
-            AVDictionary options = new AVDictionary(null);
             for (Entry<String, String> e : this.options.entrySet()) {
                 av_dict_set(options, e.getKey(), e.getValue(), 0);
             }
@@ -1321,7 +1322,6 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             if (pkt.stream_index() != grabber.getAudioStream()) {
                 return true;
             }
-            log.info("-------------- audio pts dts {} {}", pkt.pts(), pkt.dts());
             pkt.stream_index(audio_st.index());
 
             /**
