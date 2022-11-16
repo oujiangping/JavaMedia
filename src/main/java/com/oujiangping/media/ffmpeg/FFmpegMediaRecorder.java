@@ -1303,7 +1303,6 @@ public class FFmpegMediaRecorder extends FrameRecorder {
             if (pkt.stream_index() != grabber.getVideoStream()) {
                 return true;
             }
-            log.info("-------------- video pts dts {} {} {} {}", pkt.pts(), pkt.dts(), pkt.duration(), lastPts);
             if (pkt.pts() >= lastPts) {
                 lastPts = pkt.pts();
             } else {
@@ -1349,7 +1348,6 @@ public class FFmpegMediaRecorder extends FrameRecorder {
         if (len <= 0) {
             log.error("avcodec_decode_audio4 error len {}", len);
         } else if (gotFrame[0] != 0) {
-            log.info("graber getSampleFormat ------ {}", grabber.getAudioC().sample_fmt());
             record(samplesFrame);
         } else {
             log.error("avcodec_decode_audio4 gotFrame error");
