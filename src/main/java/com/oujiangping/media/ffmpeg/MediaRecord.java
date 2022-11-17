@@ -76,7 +76,7 @@ public class MediaRecord {
 
     public static void packetRecord(PacketWriter session, MyFFmpegFrameGrabber grabber) throws FrameGrabber.Exception, FrameRecorder.Exception {
         FFmpegMediaRecorder recorder = new FFmpegMediaRecorder(session, grabber.getImageWidth(), grabber.getImageHeight(), grabber.getAudioChannels());
-        if(grabber.getAudioC() != null) {
+        if (grabber.getAudioC() != null) {
             recorder.setSampleFormat(grabber.getAudioC().sample_fmt());
         }
         recorder.setFormat("flv");
@@ -86,12 +86,8 @@ public class MediaRecord {
         recorder.setGrabber(grabber);
 
         AVPacket packet;
-        try {
-            while ((packet = grabber.grabPacket()) != null) {
-                recorder.recordPacket(packet);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        while ((packet = grabber.grabPacket()) != null) {
+            recorder.recordPacket(packet);
         }
         recorder.stop();
     }
